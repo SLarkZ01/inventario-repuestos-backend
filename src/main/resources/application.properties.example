@@ -1,0 +1,15 @@
+## Example properties (do not commit secrets)
+# Use environment variables in production. Replace placeholders before deploying.
+
+# Application name
+spring.application.name=inventario-repuestos-backend
+
+# MongoDB: prefer MONGODB_URI env var, fallback to local DB
+spring.data.mongodb.uri=${MONGODB_URI:mongodb://localhost:27017/facturacion-inventario}
+spring.data.mongodb.database=${MONGODB_DB:facturacion-inventario}
+
+# JWT secret - set APP_JWT_SECRET in your environment for security
+app.jwt.secret=${APP_JWT_SECRET:replace_this_secret_change_in_prod}
+
+# Other useful properties
+server.port=${PORT:8080}
