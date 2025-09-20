@@ -143,5 +143,3 @@ git push origin feature/mi-mejora
 - Si necesitas ayuda con la configuración, asigna un issue en este repo y etiqueta a los responsables.
 
 ---
-
-¡Listo! Si quieres, puedo añadir un `CONTRIBUTING.md` con un flujo más detallado, plantillas de PR/Issue y reglas de estilo. ✨
