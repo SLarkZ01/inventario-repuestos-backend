@@ -6,12 +6,15 @@ import java.util.List;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Document(collection = "users")
 public class User {
     @Id
     private String id;
     private String username;
     private String email;
+    @JsonIgnore
     private String password; // bcrypt hash
     private String nombre;
     private String apellido;

@@ -10,6 +10,9 @@ import com.repobackend.api.dto.AuthRequests.LoginRequest;
 import com.repobackend.api.dto.AuthRequests.RegisterRequest;
 import com.repobackend.api.service.AuthService;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -20,19 +23,19 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequest req) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest req) {
         return authService.register(req);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest req) {
-        return authService.login(req);
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest req, HttpServletRequest request) {
+        return authService.login(req, request);
     }
 
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody java.util.Map<String, String> body) {
+    public ResponseEntity<?> refresh(@RequestBody java.util.Map<String, String> body, HttpServletRequest request) {
         String refresh = body.get("refreshToken");
-        return authService.refresh(refresh);
+        return authService.refresh(refresh, request);
     }
 
     @PostMapping("/logout")

@@ -7,6 +7,8 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -20,8 +22,11 @@ import com.repobackend.api.repository.RefreshTokenRepository;
 import com.repobackend.api.repository.UserRepository;
 import com.repobackend.api.security.JwtUtil;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 @Service
 public class AuthService {
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
@@ -50,17 +55,24 @@ public class AuthService {
         u.setActivo(true);
         u.setFechaCreacion(new Date());
         userRepository.save(u);
+        // Do not return password in response (it's ignored by Jackson due to @JsonIgnore)
         return ResponseEntity.status(HttpStatus.CREATED).body(u);
     }
 
-    public ResponseEntity<?> login(LoginRequest req) {
+    public ResponseEntity<?> login(LoginRequest req, HttpServletRequest request) {
         Optional<User> maybe = userRepository.findByUsername(req.usernameOrEmail);
         if (maybe.isEmpty()) maybe = userRepository.findByEmail(req.usernameOrEmail);
         if (maybe.isEmpty()) {
+            String ip = request == null ? "-" : request.getRemoteAddr();
+            String ua = request == null ? "-" : request.getHeader("User-Agent");
+            logger.warn("Login failed for user/email: {} ip={} ua={} - not found", req.usernameOrEmail, ip, ua);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
         }
         User u = maybe.get();
         if (!passwordEncoder.matches(req.password, u.getPassword())) {
+            String ip = request == null ? "-" : request.getRemoteAddr();
+            String ua = request == null ? "-" : request.getHeader("User-Agent");
+            logger.warn("Login failed for user/email: {} ip={} ua={} - invalid password", req.usernameOrEmail, ip, ua);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
         }
         // Generate JWT access token and a random refresh token
@@ -93,12 +105,18 @@ public class AuthService {
         }
     }
 
-    public ResponseEntity<?> refresh(String refreshToken) {
+    public ResponseEntity<?> refresh(String refreshToken, HttpServletRequest request) {
         String h = sha256(refreshToken);
         Optional<RefreshToken> maybe = refreshTokenRepository.findByTokenHash(h);
-        if (maybe.isEmpty()) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
+        if (maybe.isEmpty()) {
+            String ip = request == null ? "-" : request.getRemoteAddr();
+            String ua = request == null ? "-" : request.getHeader("User-Agent");
+            logger.warn("Refresh attempt with invalid token hash ip={} ua={}", ip, ua);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
+        }
         RefreshToken rt = maybe.get();
         if (rt.isRevoked() || rt.getExpiresAt().before(new Date())) {
+            logger.warn("Refresh token expired or revoked for userId={}", rt.getUserId());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token expired or revoked");
         }
         String newAccess = jwtUtil.generateToken(rt.getUserId(), com.repobackend.api.config.SecurityConstants.JWT_EXPIRATION_MS);
