@@ -60,16 +60,17 @@ Class | Method | HTTP request | Description
 <a id="documentation-for-models"></a>
 ## Documentation for Models
 
- - [org.openapitools.client.models.ApiAuthOauthFacebookPostRequest](docs/ApiAuthOauthFacebookPostRequest.md)
- - [org.openapitools.client.models.ApiAuthOauthGooglePostRequest](docs/ApiAuthOauthGooglePostRequest.md)
- - [org.openapitools.client.models.ApiAuthRefreshPostRequest](docs/ApiAuthRefreshPostRequest.md)
- - [org.openapitools.client.models.ApiTalleresInvitacionesAcceptPostRequest](docs/ApiTalleresInvitacionesAcceptPostRequest.md)
- - [org.openapitools.client.models.ApiTalleresPostRequest](docs/ApiTalleresPostRequest.md)
- - [org.openapitools.client.models.ApiTalleresTallerIdAlmacenesPostRequest](docs/ApiTalleresTallerIdAlmacenesPostRequest.md)
- - [org.openapitools.client.models.ApiTalleresTallerIdInvitacionesCodigoPostRequest](docs/ApiTalleresTallerIdInvitacionesCodigoPostRequest.md)
+ - [org.openapitools.client.models.AcceptInvitationRequest](docs/AcceptInvitationRequest.md)
+ - [org.openapitools.client.models.ApiAuthLogoutPostRequest](docs/ApiAuthLogoutPostRequest.md)
  - [org.openapitools.client.models.AuthResponse](docs/AuthResponse.md)
+ - [org.openapitools.client.models.CrearAlmacenRequest](docs/CrearAlmacenRequest.md)
+ - [org.openapitools.client.models.CrearInvitacionRequest](docs/CrearInvitacionRequest.md)
+ - [org.openapitools.client.models.CrearTallerRequest](docs/CrearTallerRequest.md)
  - [org.openapitools.client.models.ErrorResponse](docs/ErrorResponse.md)
  - [org.openapitools.client.models.LoginRequest](docs/LoginRequest.md)
+ - [org.openapitools.client.models.OAuthFacebookRequest](docs/OAuthFacebookRequest.md)
+ - [org.openapitools.client.models.OAuthGoogleRequest](docs/OAuthGoogleRequest.md)
+ - [org.openapitools.client.models.RefreshRequest](docs/RefreshRequest.md)
  - [org.openapitools.client.models.RegisterRequest](docs/RegisterRequest.md)
 
 

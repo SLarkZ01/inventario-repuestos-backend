@@ -6,15 +6,16 @@ import retrofit2.Call
 import okhttp3.RequestBody
 import com.squareup.moshi.Json
 
-import org.openapitools.client.models.ApiAuthOauthFacebookPostRequest
-import org.openapitools.client.models.ApiAuthOauthGooglePostRequest
-import org.openapitools.client.models.ApiAuthRefreshPostRequest
-import org.openapitools.client.models.ApiTalleresInvitacionesAcceptPostRequest
-import org.openapitools.client.models.ApiTalleresPostRequest
-import org.openapitools.client.models.ApiTalleresTallerIdAlmacenesPostRequest
-import org.openapitools.client.models.ApiTalleresTallerIdInvitacionesCodigoPostRequest
+import org.openapitools.client.models.AcceptInvitationRequest
+import org.openapitools.client.models.ApiAuthLogoutPostRequest
 import org.openapitools.client.models.AuthResponse
+import org.openapitools.client.models.CrearAlmacenRequest
+import org.openapitools.client.models.CrearInvitacionRequest
+import org.openapitools.client.models.CrearTallerRequest
 import org.openapitools.client.models.LoginRequest
+import org.openapitools.client.models.OAuthFacebookRequest
+import org.openapitools.client.models.OAuthGoogleRequest
+import org.openapitools.client.models.RefreshRequest
 import org.openapitools.client.models.RegisterRequest
 
 interface DefaultApi {
@@ -37,11 +38,11 @@ interface DefaultApi {
      * Responses:
      *  - 200: OK
      *
-     * @param apiAuthRefreshPostRequest  (optional)
+     * @param apiAuthLogoutPostRequest  (optional)
      * @return [Call]<[Unit]>
      */
     @POST("api/auth/logout")
-    fun apiAuthLogoutPost(@Body apiAuthRefreshPostRequest: ApiAuthRefreshPostRequest? = null): Call<Unit>
+    fun apiAuthLogoutPost(@Body apiAuthLogoutPostRequest: ApiAuthLogoutPostRequest? = null): Call<Unit>
 
     /**
      * Login/registro con Facebook access token
@@ -49,11 +50,11 @@ interface DefaultApi {
      * Responses:
      *  - 200: Tokens y usuario
      *
-     * @param apiAuthOauthFacebookPostRequest  (optional)
+     * @param oauthFacebookRequest  (optional)
      * @return [Call]<[Unit]>
      */
     @POST("api/auth/oauth/facebook")
-    fun apiAuthOauthFacebookPost(@Body apiAuthOauthFacebookPostRequest: ApiAuthOauthFacebookPostRequest? = null): Call<Unit>
+    fun apiAuthOauthFacebookPost(@Body oauthFacebookRequest: OAuthFacebookRequest? = null): Call<Unit>
 
     /**
      * Login/registro con Google ID Token
@@ -61,11 +62,11 @@ interface DefaultApi {
      * Responses:
      *  - 200: Tokens y usuario
      *
-     * @param apiAuthOauthGooglePostRequest  (optional)
+     * @param oauthGoogleRequest  (optional)
      * @return [Call]<[Unit]>
      */
     @POST("api/auth/oauth/google")
-    fun apiAuthOauthGooglePost(@Body apiAuthOauthGooglePostRequest: ApiAuthOauthGooglePostRequest? = null): Call<Unit>
+    fun apiAuthOauthGooglePost(@Body oauthGoogleRequest: OAuthGoogleRequest? = null): Call<Unit>
 
     /**
      * Obtener nuevo access token usando refresh token
@@ -73,11 +74,11 @@ interface DefaultApi {
      * Responses:
      *  - 200: Nuevo access token
      *
-     * @param apiAuthRefreshPostRequest  (optional)
+     * @param refreshRequest  (optional)
      * @return [Call]<[Unit]>
      */
     @POST("api/auth/refresh")
-    fun apiAuthRefreshPost(@Body apiAuthRefreshPostRequest: ApiAuthRefreshPostRequest? = null): Call<Unit>
+    fun apiAuthRefreshPost(@Body refreshRequest: RefreshRequest? = null): Call<Unit>
 
     /**
      * Registro de usuario
@@ -109,11 +110,11 @@ interface DefaultApi {
      * Responses:
      *  - 200: Usuario unido al taller
      *
-     * @param apiTalleresInvitacionesAcceptPostRequest  (optional)
+     * @param acceptInvitationRequest  (optional)
      * @return [Call]<[Unit]>
      */
     @POST("api/talleres/invitaciones/accept")
-    fun apiTalleresInvitacionesAcceptPost(@Body apiTalleresInvitacionesAcceptPostRequest: ApiTalleresInvitacionesAcceptPostRequest? = null): Call<Unit>
+    fun apiTalleresInvitacionesAcceptPost(@Body acceptInvitationRequest: AcceptInvitationRequest? = null): Call<Unit>
 
     /**
      * Crear taller (usuario autenticado es propietario)
@@ -121,11 +122,11 @@ interface DefaultApi {
      * Responses:
      *  - 201: Taller creado
      *
-     * @param apiTalleresPostRequest  (optional)
+     * @param crearTallerRequest  (optional)
      * @return [Call]<[Unit]>
      */
     @POST("api/talleres")
-    fun apiTalleresPost(@Body apiTalleresPostRequest: ApiTalleresPostRequest? = null): Call<Unit>
+    fun apiTalleresPost(@Body crearTallerRequest: CrearTallerRequest? = null): Call<Unit>
 
     /**
      * Crear almacen en taller
@@ -134,11 +135,11 @@ interface DefaultApi {
      *  - 201: Almacen creado
      *
      * @param tallerId 
-     * @param apiTalleresTallerIdAlmacenesPostRequest  (optional)
+     * @param crearAlmacenRequest  (optional)
      * @return [Call]<[Unit]>
      */
     @POST("api/talleres/{tallerId}/almacenes")
-    fun apiTalleresTallerIdAlmacenesPost(@Path("tallerId") tallerId: kotlin.String, @Body apiTalleresTallerIdAlmacenesPostRequest: ApiTalleresTallerIdAlmacenesPostRequest? = null): Call<Unit>
+    fun apiTalleresTallerIdAlmacenesPost(@Path("tallerId") tallerId: kotlin.String, @Body crearAlmacenRequest: CrearAlmacenRequest? = null): Call<Unit>
 
     /**
      * Crear invitación por código para un taller
@@ -147,10 +148,10 @@ interface DefaultApi {
      *  - 201: Código de invitación (raw code sólo se devuelve al creador)
      *
      * @param tallerId 
-     * @param apiTalleresTallerIdInvitacionesCodigoPostRequest  (optional)
+     * @param crearInvitacionRequest  (optional)
      * @return [Call]<[Unit]>
      */
     @POST("api/talleres/{tallerId}/invitaciones/codigo")
-    fun apiTalleresTallerIdInvitacionesCodigoPost(@Path("tallerId") tallerId: kotlin.String, @Body apiTalleresTallerIdInvitacionesCodigoPostRequest: ApiTalleresTallerIdInvitacionesCodigoPostRequest? = null): Call<Unit>
+    fun apiTalleresTallerIdInvitacionesCodigoPost(@Path("tallerId") tallerId: kotlin.String, @Body crearInvitacionRequest: CrearInvitacionRequest? = null): Call<Unit>
 
 }

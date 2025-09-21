@@ -45,14 +45,12 @@ paths:
   /api/auth/refresh:
     post:
       summary: Obtener nuevo access token usando refresh token
+      operationId: apiAuthRefreshPost
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                refreshToken:
-                  type: string
+              $ref: '#/components/schemas/RefreshRequest'
       responses:
         '200':
           description: Nuevo access token
@@ -73,36 +71,24 @@ paths:
   /api/auth/oauth/google:
     post:
       summary: Login/registro con Google ID Token
+      operationId: apiAuthOauthGooglePost
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                idToken:
-                  type: string
-                inviteCode:
-                  type: string
-                device:
-                  type: string
+              $ref: '#/components/schemas/OAuthGoogleRequest'
       responses:
         '200':
           description: Tokens y usuario
   /api/auth/oauth/facebook:
     post:
       summary: Login/registro con Facebook access token
+      operationId: apiAuthOauthFacebookPost
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                accessToken:
-                  type: string
-                inviteCode:
-                  type: string
-                device:
-                  type: string
+              $ref: '#/components/schemas/OAuthFacebookRequest'
       responses:
         '200':
           description: Tokens y usuario
@@ -110,21 +96,20 @@ paths:
   /api/talleres:
     post:
       summary: Crear taller (usuario autenticado es propietario)
+      operationId: apiTalleresPost
       security:
         - bearerAuth: []
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                nombre:
-                  type: string
+              $ref: '#/components/schemas/CrearTallerRequest'
       responses:
         '201':
           description: Taller creado
     get:
       summary: Listar talleres del usuario autenticado
+      operationId: apiTalleresGet
       security:
         - bearerAuth: []
       responses:
@@ -134,6 +119,7 @@ paths:
   /api/talleres/{tallerId}/almacenes:
     post:
       summary: Crear almacen en taller
+      operationId: apiTalleresTallerIdAlmacenesPost
       security:
         - bearerAuth: []
       parameters:
@@ -146,12 +132,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                nombre:
-                  type: string
-                ubicacion:
-                  type: string
+              $ref: '#/components/schemas/CrearAlmacenRequest'
       responses:
         '201':
           description: Almacen creado
@@ -159,6 +140,7 @@ paths:
   /api/talleres/{tallerId}/invitaciones/codigo:
     post:
       summary: Crear invitación por código para un taller
+      operationId: apiTalleresTallerIdInvitacionesCodigoPost
       security:
         - bearerAuth: []
       parameters:
@@ -171,12 +153,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                role:
-                  type: string
-                daysValid:
-                  type: integer
+              $ref: '#/components/schemas/CrearInvitacionRequest'
       responses:
         '201':
           description: Código de invitación (raw code sólo se devuelve al creador)
@@ -184,16 +161,14 @@ paths:
   /api/talleres/invitaciones/accept:
     post:
       summary: Aceptar invitación por código
+      operationId: apiTalleresInvitacionesAcceptPost
       security:
         - bearerAuth: []
       requestBody:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                code:
-                  type: string
+              $ref: '#/components/schemas/AcceptInvitationRequest'
       responses:
         '200':
           description: Usuario unido al taller
@@ -244,4 +219,51 @@ components:
       type: object
       properties:
         error:
+          type: string
+    RefreshRequest:
+      type: object
+      properties:
+        refreshToken:
+          type: string
+    OAuthGoogleRequest:
+      type: object
+      properties:
+        idToken:
+          type: string
+        inviteCode:
+          type: string
+        device:
+          type: string
+    OAuthFacebookRequest:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        inviteCode:
+          type: string
+        device:
+          type: string
+    CrearTallerRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+    CrearAlmacenRequest:
+      type: object
+      properties:
+        nombre:
+          type: string
+        ubicacion:
+          type: string
+    CrearInvitacionRequest:
+      type: object
+      properties:
+        role:
+          type: string
+        daysValid:
+          type: integer
+    AcceptInvitationRequest:
+      type: object
+      properties:
+        code:
           type: string

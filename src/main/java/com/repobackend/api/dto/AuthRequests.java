@@ -4,7 +4,11 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+/**
+ * DTOs para endpoints de autenticación.
+ */
 public class AuthRequests {
+
     public static class LoginRequest {
         @NotBlank
         public String usernameOrEmail;
@@ -32,4 +36,5 @@ public class AuthRequests {
         public String rol; // optional
         public String inviteCode; // optional: code to accept invitation to a taller
     }
+
 }

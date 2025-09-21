@@ -26,129 +26,28 @@ import { BASE_PATH, COLLECTION_FORMATS, BaseAPI, RequiredError } from './base';
 /**
  * 
  * @export
- * @interface ApiAuthOauthFacebookPostRequest
+ * @interface AcceptInvitationRequest
  */
-export interface ApiAuthOauthFacebookPostRequest {
+export interface AcceptInvitationRequest {
     /**
      * 
      * @type {string}
-     * @memberof ApiAuthOauthFacebookPostRequest
-     */
-    'accessToken'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiAuthOauthFacebookPostRequest
-     */
-    'inviteCode'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiAuthOauthFacebookPostRequest
-     */
-    'device'?: string;
-}
-/**
- * 
- * @export
- * @interface ApiAuthOauthGooglePostRequest
- */
-export interface ApiAuthOauthGooglePostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiAuthOauthGooglePostRequest
-     */
-    'idToken'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiAuthOauthGooglePostRequest
-     */
-    'inviteCode'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiAuthOauthGooglePostRequest
-     */
-    'device'?: string;
-}
-/**
- * 
- * @export
- * @interface ApiAuthRefreshPostRequest
- */
-export interface ApiAuthRefreshPostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiAuthRefreshPostRequest
-     */
-    'refreshToken'?: string;
-}
-/**
- * 
- * @export
- * @interface ApiTalleresInvitacionesAcceptPostRequest
- */
-export interface ApiTalleresInvitacionesAcceptPostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiTalleresInvitacionesAcceptPostRequest
+     * @memberof AcceptInvitationRequest
      */
     'code'?: string;
 }
 /**
  * 
  * @export
- * @interface ApiTalleresPostRequest
+ * @interface ApiAuthLogoutPostRequest
  */
-export interface ApiTalleresPostRequest {
+export interface ApiAuthLogoutPostRequest {
     /**
      * 
      * @type {string}
-     * @memberof ApiTalleresPostRequest
+     * @memberof ApiAuthLogoutPostRequest
      */
-    'nombre'?: string;
-}
-/**
- * 
- * @export
- * @interface ApiTalleresTallerIdAlmacenesPostRequest
- */
-export interface ApiTalleresTallerIdAlmacenesPostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiTalleresTallerIdAlmacenesPostRequest
-     */
-    'nombre'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiTalleresTallerIdAlmacenesPostRequest
-     */
-    'ubicacion'?: string;
-}
-/**
- * 
- * @export
- * @interface ApiTalleresTallerIdInvitacionesCodigoPostRequest
- */
-export interface ApiTalleresTallerIdInvitacionesCodigoPostRequest {
-    /**
-     * 
-     * @type {string}
-     * @memberof ApiTalleresTallerIdInvitacionesCodigoPostRequest
-     */
-    'role'?: string;
-    /**
-     * 
-     * @type {number}
-     * @memberof ApiTalleresTallerIdInvitacionesCodigoPostRequest
-     */
-    'daysValid'?: number;
+    'refreshToken'?: string;
 }
 /**
  * 
@@ -174,6 +73,57 @@ export interface AuthResponse {
      * @memberof AuthResponse
      */
     'user'?: object;
+}
+/**
+ * 
+ * @export
+ * @interface CrearAlmacenRequest
+ */
+export interface CrearAlmacenRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof CrearAlmacenRequest
+     */
+    'nombre'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof CrearAlmacenRequest
+     */
+    'ubicacion'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface CrearInvitacionRequest
+ */
+export interface CrearInvitacionRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof CrearInvitacionRequest
+     */
+    'role'?: string;
+    /**
+     * 
+     * @type {number}
+     * @memberof CrearInvitacionRequest
+     */
+    'daysValid'?: number;
+}
+/**
+ * 
+ * @export
+ * @interface CrearTallerRequest
+ */
+export interface CrearTallerRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof CrearTallerRequest
+     */
+    'nombre'?: string;
 }
 /**
  * 
@@ -212,6 +162,69 @@ export interface LoginRequest {
      * @memberof LoginRequest
      */
     'device'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface OAuthFacebookRequest
+ */
+export interface OAuthFacebookRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof OAuthFacebookRequest
+     */
+    'accessToken'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof OAuthFacebookRequest
+     */
+    'inviteCode'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof OAuthFacebookRequest
+     */
+    'device'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface OAuthGoogleRequest
+ */
+export interface OAuthGoogleRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof OAuthGoogleRequest
+     */
+    'idToken'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof OAuthGoogleRequest
+     */
+    'inviteCode'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof OAuthGoogleRequest
+     */
+    'device'?: string;
+}
+/**
+ * 
+ * @export
+ * @interface RefreshRequest
+ */
+export interface RefreshRequest {
+    /**
+     * 
+     * @type {string}
+     * @memberof RefreshRequest
+     */
+    'refreshToken'?: string;
 }
 /**
  * 
@@ -308,11 +321,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * 
          * @summary Revocar refresh token
-         * @param {ApiAuthRefreshPostRequest} [apiAuthRefreshPostRequest] 
+         * @param {ApiAuthLogoutPostRequest} [apiAuthLogoutPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiAuthLogoutPost: async (apiAuthRefreshPostRequest?: ApiAuthRefreshPostRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiAuthLogoutPost: async (apiAuthLogoutPostRequest?: ApiAuthLogoutPostRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/auth/logout`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -332,7 +345,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiAuthRefreshPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(apiAuthLogoutPostRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -342,11 +355,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * 
          * @summary Login/registro con Facebook access token
-         * @param {ApiAuthOauthFacebookPostRequest} [apiAuthOauthFacebookPostRequest] 
+         * @param {OAuthFacebookRequest} [oAuthFacebookRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiAuthOauthFacebookPost: async (apiAuthOauthFacebookPostRequest?: ApiAuthOauthFacebookPostRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiAuthOauthFacebookPost: async (oAuthFacebookRequest?: OAuthFacebookRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/auth/oauth/facebook`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -366,7 +379,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiAuthOauthFacebookPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(oAuthFacebookRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -376,11 +389,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * 
          * @summary Login/registro con Google ID Token
-         * @param {ApiAuthOauthGooglePostRequest} [apiAuthOauthGooglePostRequest] 
+         * @param {OAuthGoogleRequest} [oAuthGoogleRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiAuthOauthGooglePost: async (apiAuthOauthGooglePostRequest?: ApiAuthOauthGooglePostRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiAuthOauthGooglePost: async (oAuthGoogleRequest?: OAuthGoogleRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/auth/oauth/google`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -400,7 +413,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiAuthOauthGooglePostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(oAuthGoogleRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -410,11 +423,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * 
          * @summary Obtener nuevo access token usando refresh token
-         * @param {ApiAuthRefreshPostRequest} [apiAuthRefreshPostRequest] 
+         * @param {RefreshRequest} [refreshRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiAuthRefreshPost: async (apiAuthRefreshPostRequest?: ApiAuthRefreshPostRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiAuthRefreshPost: async (refreshRequest?: RefreshRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/auth/refresh`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -434,7 +447,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiAuthRefreshPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(refreshRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -514,11 +527,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * 
          * @summary Aceptar invitación por código
-         * @param {ApiTalleresInvitacionesAcceptPostRequest} [apiTalleresInvitacionesAcceptPostRequest] 
+         * @param {AcceptInvitationRequest} [acceptInvitationRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiTalleresInvitacionesAcceptPost: async (apiTalleresInvitacionesAcceptPostRequest?: ApiTalleresInvitacionesAcceptPostRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiTalleresInvitacionesAcceptPost: async (acceptInvitationRequest?: AcceptInvitationRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/talleres/invitaciones/accept`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -542,7 +555,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiTalleresInvitacionesAcceptPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(acceptInvitationRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -552,11 +565,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         /**
          * 
          * @summary Crear taller (usuario autenticado es propietario)
-         * @param {ApiTalleresPostRequest} [apiTalleresPostRequest] 
+         * @param {CrearTallerRequest} [crearTallerRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiTalleresPost: async (apiTalleresPostRequest?: ApiTalleresPostRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiTalleresPost: async (crearTallerRequest?: CrearTallerRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             const localVarPath = `/api/talleres`;
             // use dummy base URL string because the URL constructor only accepts absolute URLs.
             const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
@@ -580,7 +593,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiTalleresPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(crearTallerRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -591,11 +604,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * 
          * @summary Crear almacen en taller
          * @param {string} tallerId 
-         * @param {ApiTalleresTallerIdAlmacenesPostRequest} [apiTalleresTallerIdAlmacenesPostRequest] 
+         * @param {CrearAlmacenRequest} [crearAlmacenRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiTalleresTallerIdAlmacenesPost: async (tallerId: string, apiTalleresTallerIdAlmacenesPostRequest?: ApiTalleresTallerIdAlmacenesPostRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiTalleresTallerIdAlmacenesPost: async (tallerId: string, crearAlmacenRequest?: CrearAlmacenRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'tallerId' is not null or undefined
             assertParamExists('apiTalleresTallerIdAlmacenesPost', 'tallerId', tallerId)
             const localVarPath = `/api/talleres/{tallerId}/almacenes`
@@ -622,7 +635,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiTalleresTallerIdAlmacenesPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(crearAlmacenRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -633,11 +646,11 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
          * 
          * @summary Crear invitación por código para un taller
          * @param {string} tallerId 
-         * @param {ApiTalleresTallerIdInvitacionesCodigoPostRequest} [apiTalleresTallerIdInvitacionesCodigoPostRequest] 
+         * @param {CrearInvitacionRequest} [crearInvitacionRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiTalleresTallerIdInvitacionesCodigoPost: async (tallerId: string, apiTalleresTallerIdInvitacionesCodigoPostRequest?: ApiTalleresTallerIdInvitacionesCodigoPostRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+        apiTalleresTallerIdInvitacionesCodigoPost: async (tallerId: string, crearInvitacionRequest?: CrearInvitacionRequest, options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
             // verify required parameter 'tallerId' is not null or undefined
             assertParamExists('apiTalleresTallerIdInvitacionesCodigoPost', 'tallerId', tallerId)
             const localVarPath = `/api/talleres/{tallerId}/invitaciones/codigo`
@@ -664,7 +677,7 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             setSearchParams(localVarUrlObj, localVarQueryParameter);
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
-            localVarRequestOptions.data = serializeDataIfNeeded(apiTalleresTallerIdInvitacionesCodigoPostRequest, localVarRequestOptions, configuration)
+            localVarRequestOptions.data = serializeDataIfNeeded(crearInvitacionRequest, localVarRequestOptions, configuration)
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -695,45 +708,45 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         /**
          * 
          * @summary Revocar refresh token
-         * @param {ApiAuthRefreshPostRequest} [apiAuthRefreshPostRequest] 
+         * @param {ApiAuthLogoutPostRequest} [apiAuthLogoutPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiAuthLogoutPost(apiAuthRefreshPostRequest?: ApiAuthRefreshPostRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiAuthLogoutPost(apiAuthRefreshPostRequest, options);
+        async apiAuthLogoutPost(apiAuthLogoutPostRequest?: ApiAuthLogoutPostRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiAuthLogoutPost(apiAuthLogoutPostRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * 
          * @summary Login/registro con Facebook access token
-         * @param {ApiAuthOauthFacebookPostRequest} [apiAuthOauthFacebookPostRequest] 
+         * @param {OAuthFacebookRequest} [oAuthFacebookRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiAuthOauthFacebookPost(apiAuthOauthFacebookPostRequest?: ApiAuthOauthFacebookPostRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiAuthOauthFacebookPost(apiAuthOauthFacebookPostRequest, options);
+        async apiAuthOauthFacebookPost(oAuthFacebookRequest?: OAuthFacebookRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiAuthOauthFacebookPost(oAuthFacebookRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * 
          * @summary Login/registro con Google ID Token
-         * @param {ApiAuthOauthGooglePostRequest} [apiAuthOauthGooglePostRequest] 
+         * @param {OAuthGoogleRequest} [oAuthGoogleRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiAuthOauthGooglePost(apiAuthOauthGooglePostRequest?: ApiAuthOauthGooglePostRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiAuthOauthGooglePost(apiAuthOauthGooglePostRequest, options);
+        async apiAuthOauthGooglePost(oAuthGoogleRequest?: OAuthGoogleRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiAuthOauthGooglePost(oAuthGoogleRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * 
          * @summary Obtener nuevo access token usando refresh token
-         * @param {ApiAuthRefreshPostRequest} [apiAuthRefreshPostRequest] 
+         * @param {RefreshRequest} [refreshRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiAuthRefreshPost(apiAuthRefreshPostRequest?: ApiAuthRefreshPostRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiAuthRefreshPost(apiAuthRefreshPostRequest, options);
+        async apiAuthRefreshPost(refreshRequest?: RefreshRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiAuthRefreshPost(refreshRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
@@ -760,47 +773,47 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         /**
          * 
          * @summary Aceptar invitación por código
-         * @param {ApiTalleresInvitacionesAcceptPostRequest} [apiTalleresInvitacionesAcceptPostRequest] 
+         * @param {AcceptInvitationRequest} [acceptInvitationRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiTalleresInvitacionesAcceptPost(apiTalleresInvitacionesAcceptPostRequest?: ApiTalleresInvitacionesAcceptPostRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTalleresInvitacionesAcceptPost(apiTalleresInvitacionesAcceptPostRequest, options);
+        async apiTalleresInvitacionesAcceptPost(acceptInvitationRequest?: AcceptInvitationRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTalleresInvitacionesAcceptPost(acceptInvitationRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * 
          * @summary Crear taller (usuario autenticado es propietario)
-         * @param {ApiTalleresPostRequest} [apiTalleresPostRequest] 
+         * @param {CrearTallerRequest} [crearTallerRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiTalleresPost(apiTalleresPostRequest?: ApiTalleresPostRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTalleresPost(apiTalleresPostRequest, options);
+        async apiTalleresPost(crearTallerRequest?: CrearTallerRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTalleresPost(crearTallerRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * 
          * @summary Crear almacen en taller
          * @param {string} tallerId 
-         * @param {ApiTalleresTallerIdAlmacenesPostRequest} [apiTalleresTallerIdAlmacenesPostRequest] 
+         * @param {CrearAlmacenRequest} [crearAlmacenRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiTalleresTallerIdAlmacenesPost(tallerId: string, apiTalleresTallerIdAlmacenesPostRequest?: ApiTalleresTallerIdAlmacenesPostRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTalleresTallerIdAlmacenesPost(tallerId, apiTalleresTallerIdAlmacenesPostRequest, options);
+        async apiTalleresTallerIdAlmacenesPost(tallerId: string, crearAlmacenRequest?: CrearAlmacenRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTalleresTallerIdAlmacenesPost(tallerId, crearAlmacenRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
         /**
          * 
          * @summary Crear invitación por código para un taller
          * @param {string} tallerId 
-         * @param {ApiTalleresTallerIdInvitacionesCodigoPostRequest} [apiTalleresTallerIdInvitacionesCodigoPostRequest] 
+         * @param {CrearInvitacionRequest} [crearInvitacionRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        async apiTalleresTallerIdInvitacionesCodigoPost(tallerId: string, apiTalleresTallerIdInvitacionesCodigoPostRequest?: ApiTalleresTallerIdInvitacionesCodigoPostRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
-            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTalleresTallerIdInvitacionesCodigoPost(tallerId, apiTalleresTallerIdInvitacionesCodigoPostRequest, options);
+        async apiTalleresTallerIdInvitacionesCodigoPost(tallerId: string, crearInvitacionRequest?: CrearInvitacionRequest, options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiTalleresTallerIdInvitacionesCodigoPost(tallerId, crearInvitacionRequest, options);
             return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
         },
     }
@@ -826,42 +839,42 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         /**
          * 
          * @summary Revocar refresh token
-         * @param {ApiAuthRefreshPostRequest} [apiAuthRefreshPostRequest] 
+         * @param {ApiAuthLogoutPostRequest} [apiAuthLogoutPostRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiAuthLogoutPost(apiAuthRefreshPostRequest?: ApiAuthRefreshPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiAuthLogoutPost(apiAuthRefreshPostRequest, options).then((request) => request(axios, basePath));
+        apiAuthLogoutPost(apiAuthLogoutPostRequest?: ApiAuthLogoutPostRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiAuthLogoutPost(apiAuthLogoutPostRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary Login/registro con Facebook access token
-         * @param {ApiAuthOauthFacebookPostRequest} [apiAuthOauthFacebookPostRequest] 
+         * @param {OAuthFacebookRequest} [oAuthFacebookRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiAuthOauthFacebookPost(apiAuthOauthFacebookPostRequest?: ApiAuthOauthFacebookPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiAuthOauthFacebookPost(apiAuthOauthFacebookPostRequest, options).then((request) => request(axios, basePath));
+        apiAuthOauthFacebookPost(oAuthFacebookRequest?: OAuthFacebookRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiAuthOauthFacebookPost(oAuthFacebookRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary Login/registro con Google ID Token
-         * @param {ApiAuthOauthGooglePostRequest} [apiAuthOauthGooglePostRequest] 
+         * @param {OAuthGoogleRequest} [oAuthGoogleRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiAuthOauthGooglePost(apiAuthOauthGooglePostRequest?: ApiAuthOauthGooglePostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiAuthOauthGooglePost(apiAuthOauthGooglePostRequest, options).then((request) => request(axios, basePath));
+        apiAuthOauthGooglePost(oAuthGoogleRequest?: OAuthGoogleRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiAuthOauthGooglePost(oAuthGoogleRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary Obtener nuevo access token usando refresh token
-         * @param {ApiAuthRefreshPostRequest} [apiAuthRefreshPostRequest] 
+         * @param {RefreshRequest} [refreshRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiAuthRefreshPost(apiAuthRefreshPostRequest?: ApiAuthRefreshPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiAuthRefreshPost(apiAuthRefreshPostRequest, options).then((request) => request(axios, basePath));
+        apiAuthRefreshPost(refreshRequest?: RefreshRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiAuthRefreshPost(refreshRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -885,44 +898,44 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         /**
          * 
          * @summary Aceptar invitación por código
-         * @param {ApiTalleresInvitacionesAcceptPostRequest} [apiTalleresInvitacionesAcceptPostRequest] 
+         * @param {AcceptInvitationRequest} [acceptInvitationRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiTalleresInvitacionesAcceptPost(apiTalleresInvitacionesAcceptPostRequest?: ApiTalleresInvitacionesAcceptPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiTalleresInvitacionesAcceptPost(apiTalleresInvitacionesAcceptPostRequest, options).then((request) => request(axios, basePath));
+        apiTalleresInvitacionesAcceptPost(acceptInvitationRequest?: AcceptInvitationRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiTalleresInvitacionesAcceptPost(acceptInvitationRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary Crear taller (usuario autenticado es propietario)
-         * @param {ApiTalleresPostRequest} [apiTalleresPostRequest] 
+         * @param {CrearTallerRequest} [crearTallerRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiTalleresPost(apiTalleresPostRequest?: ApiTalleresPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiTalleresPost(apiTalleresPostRequest, options).then((request) => request(axios, basePath));
+        apiTalleresPost(crearTallerRequest?: CrearTallerRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiTalleresPost(crearTallerRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary Crear almacen en taller
          * @param {string} tallerId 
-         * @param {ApiTalleresTallerIdAlmacenesPostRequest} [apiTalleresTallerIdAlmacenesPostRequest] 
+         * @param {CrearAlmacenRequest} [crearAlmacenRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiTalleresTallerIdAlmacenesPost(tallerId: string, apiTalleresTallerIdAlmacenesPostRequest?: ApiTalleresTallerIdAlmacenesPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiTalleresTallerIdAlmacenesPost(tallerId, apiTalleresTallerIdAlmacenesPostRequest, options).then((request) => request(axios, basePath));
+        apiTalleresTallerIdAlmacenesPost(tallerId: string, crearAlmacenRequest?: CrearAlmacenRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiTalleresTallerIdAlmacenesPost(tallerId, crearAlmacenRequest, options).then((request) => request(axios, basePath));
         },
         /**
          * 
          * @summary Crear invitación por código para un taller
          * @param {string} tallerId 
-         * @param {ApiTalleresTallerIdInvitacionesCodigoPostRequest} [apiTalleresTallerIdInvitacionesCodigoPostRequest] 
+         * @param {CrearInvitacionRequest} [crearInvitacionRequest] 
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
          */
-        apiTalleresTallerIdInvitacionesCodigoPost(tallerId: string, apiTalleresTallerIdInvitacionesCodigoPostRequest?: ApiTalleresTallerIdInvitacionesCodigoPostRequest, options?: any): AxiosPromise<void> {
-            return localVarFp.apiTalleresTallerIdInvitacionesCodigoPost(tallerId, apiTalleresTallerIdInvitacionesCodigoPostRequest, options).then((request) => request(axios, basePath));
+        apiTalleresTallerIdInvitacionesCodigoPost(tallerId: string, crearInvitacionRequest?: CrearInvitacionRequest, options?: any): AxiosPromise<void> {
+            return localVarFp.apiTalleresTallerIdInvitacionesCodigoPost(tallerId, crearInvitacionRequest, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -949,49 +962,49 @@ export class DefaultApi extends BaseAPI {
     /**
      * 
      * @summary Revocar refresh token
-     * @param {ApiAuthRefreshPostRequest} [apiAuthRefreshPostRequest] 
+     * @param {ApiAuthLogoutPostRequest} [apiAuthLogoutPostRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiAuthLogoutPost(apiAuthRefreshPostRequest?: ApiAuthRefreshPostRequest, options?: AxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiAuthLogoutPost(apiAuthRefreshPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiAuthLogoutPost(apiAuthLogoutPostRequest?: ApiAuthLogoutPostRequest, options?: AxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiAuthLogoutPost(apiAuthLogoutPostRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary Login/registro con Facebook access token
-     * @param {ApiAuthOauthFacebookPostRequest} [apiAuthOauthFacebookPostRequest] 
+     * @param {OAuthFacebookRequest} [oAuthFacebookRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiAuthOauthFacebookPost(apiAuthOauthFacebookPostRequest?: ApiAuthOauthFacebookPostRequest, options?: AxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiAuthOauthFacebookPost(apiAuthOauthFacebookPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiAuthOauthFacebookPost(oAuthFacebookRequest?: OAuthFacebookRequest, options?: AxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiAuthOauthFacebookPost(oAuthFacebookRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary Login/registro con Google ID Token
-     * @param {ApiAuthOauthGooglePostRequest} [apiAuthOauthGooglePostRequest] 
+     * @param {OAuthGoogleRequest} [oAuthGoogleRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiAuthOauthGooglePost(apiAuthOauthGooglePostRequest?: ApiAuthOauthGooglePostRequest, options?: AxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiAuthOauthGooglePost(apiAuthOauthGooglePostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiAuthOauthGooglePost(oAuthGoogleRequest?: OAuthGoogleRequest, options?: AxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiAuthOauthGooglePost(oAuthGoogleRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary Obtener nuevo access token usando refresh token
-     * @param {ApiAuthRefreshPostRequest} [apiAuthRefreshPostRequest] 
+     * @param {RefreshRequest} [refreshRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiAuthRefreshPost(apiAuthRefreshPostRequest?: ApiAuthRefreshPostRequest, options?: AxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiAuthRefreshPost(apiAuthRefreshPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiAuthRefreshPost(refreshRequest?: RefreshRequest, options?: AxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiAuthRefreshPost(refreshRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
@@ -1020,51 +1033,51 @@ export class DefaultApi extends BaseAPI {
     /**
      * 
      * @summary Aceptar invitación por código
-     * @param {ApiTalleresInvitacionesAcceptPostRequest} [apiTalleresInvitacionesAcceptPostRequest] 
+     * @param {AcceptInvitationRequest} [acceptInvitationRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiTalleresInvitacionesAcceptPost(apiTalleresInvitacionesAcceptPostRequest?: ApiTalleresInvitacionesAcceptPostRequest, options?: AxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiTalleresInvitacionesAcceptPost(apiTalleresInvitacionesAcceptPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiTalleresInvitacionesAcceptPost(acceptInvitationRequest?: AcceptInvitationRequest, options?: AxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiTalleresInvitacionesAcceptPost(acceptInvitationRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary Crear taller (usuario autenticado es propietario)
-     * @param {ApiTalleresPostRequest} [apiTalleresPostRequest] 
+     * @param {CrearTallerRequest} [crearTallerRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiTalleresPost(apiTalleresPostRequest?: ApiTalleresPostRequest, options?: AxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiTalleresPost(apiTalleresPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiTalleresPost(crearTallerRequest?: CrearTallerRequest, options?: AxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiTalleresPost(crearTallerRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary Crear almacen en taller
      * @param {string} tallerId 
-     * @param {ApiTalleresTallerIdAlmacenesPostRequest} [apiTalleresTallerIdAlmacenesPostRequest] 
+     * @param {CrearAlmacenRequest} [crearAlmacenRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiTalleresTallerIdAlmacenesPost(tallerId: string, apiTalleresTallerIdAlmacenesPostRequest?: ApiTalleresTallerIdAlmacenesPostRequest, options?: AxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiTalleresTallerIdAlmacenesPost(tallerId, apiTalleresTallerIdAlmacenesPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiTalleresTallerIdAlmacenesPost(tallerId: string, crearAlmacenRequest?: CrearAlmacenRequest, options?: AxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiTalleresTallerIdAlmacenesPost(tallerId, crearAlmacenRequest, options).then((request) => request(this.axios, this.basePath));
     }
 
     /**
      * 
      * @summary Crear invitación por código para un taller
      * @param {string} tallerId 
-     * @param {ApiTalleresTallerIdInvitacionesCodigoPostRequest} [apiTalleresTallerIdInvitacionesCodigoPostRequest] 
+     * @param {CrearInvitacionRequest} [crearInvitacionRequest] 
      * @param {*} [options] Override http request option.
      * @throws {RequiredError}
      * @memberof DefaultApi
      */
-    public apiTalleresTallerIdInvitacionesCodigoPost(tallerId: string, apiTalleresTallerIdInvitacionesCodigoPostRequest?: ApiTalleresTallerIdInvitacionesCodigoPostRequest, options?: AxiosRequestConfig) {
-        return DefaultApiFp(this.configuration).apiTalleresTallerIdInvitacionesCodigoPost(tallerId, apiTalleresTallerIdInvitacionesCodigoPostRequest, options).then((request) => request(this.axios, this.basePath));
+    public apiTalleresTallerIdInvitacionesCodigoPost(tallerId: string, crearInvitacionRequest?: CrearInvitacionRequest, options?: AxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiTalleresTallerIdInvitacionesCodigoPost(tallerId, crearInvitacionRequest, options).then((request) => request(this.axios, this.basePath));
     }
 }
 

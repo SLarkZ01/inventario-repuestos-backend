@@ -65,16 +65,16 @@ Revocar refresh token
 
 val apiClient = ApiClient()
 val webService = apiClient.createWebservice(DefaultApi::class.java)
-val apiAuthRefreshPostRequest : ApiAuthRefreshPostRequest =  // ApiAuthRefreshPostRequest | 
+val apiAuthLogoutPostRequest : ApiAuthLogoutPostRequest =  // ApiAuthLogoutPostRequest | 
 
-webService.apiAuthLogoutPost(apiAuthRefreshPostRequest)
+webService.apiAuthLogoutPost(apiAuthLogoutPostRequest)
 ```
 
 ### Parameters
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **apiAuthRefreshPostRequest** | [**ApiAuthRefreshPostRequest**](ApiAuthRefreshPostRequest.md)|  | [optional]
+ **apiAuthLogoutPostRequest** | [**ApiAuthLogoutPostRequest**](ApiAuthLogoutPostRequest.md)|  | [optional]
 
 ### Return type
 
@@ -101,16 +101,16 @@ Login/registro con Facebook access token
 
 val apiClient = ApiClient()
 val webService = apiClient.createWebservice(DefaultApi::class.java)
-val apiAuthOauthFacebookPostRequest : ApiAuthOauthFacebookPostRequest =  // ApiAuthOauthFacebookPostRequest | 
+val oauthFacebookRequest : OAuthFacebookRequest =  // OAuthFacebookRequest | 
 
-webService.apiAuthOauthFacebookPost(apiAuthOauthFacebookPostRequest)
+webService.apiAuthOauthFacebookPost(oauthFacebookRequest)
 ```
 
 ### Parameters
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **apiAuthOauthFacebookPostRequest** | [**ApiAuthOauthFacebookPostRequest**](ApiAuthOauthFacebookPostRequest.md)|  | [optional]
+ **oauthFacebookRequest** | [**OAuthFacebookRequest**](OAuthFacebookRequest.md)|  | [optional]
 
 ### Return type
 
@@ -137,16 +137,16 @@ Login/registro con Google ID Token
 
 val apiClient = ApiClient()
 val webService = apiClient.createWebservice(DefaultApi::class.java)
-val apiAuthOauthGooglePostRequest : ApiAuthOauthGooglePostRequest =  // ApiAuthOauthGooglePostRequest | 
+val oauthGoogleRequest : OAuthGoogleRequest =  // OAuthGoogleRequest | 
 
-webService.apiAuthOauthGooglePost(apiAuthOauthGooglePostRequest)
+webService.apiAuthOauthGooglePost(oauthGoogleRequest)
 ```
 
 ### Parameters
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **apiAuthOauthGooglePostRequest** | [**ApiAuthOauthGooglePostRequest**](ApiAuthOauthGooglePostRequest.md)|  | [optional]
+ **oauthGoogleRequest** | [**OAuthGoogleRequest**](OAuthGoogleRequest.md)|  | [optional]
 
 ### Return type
 
@@ -173,16 +173,16 @@ Obtener nuevo access token usando refresh token
 
 val apiClient = ApiClient()
 val webService = apiClient.createWebservice(DefaultApi::class.java)
-val apiAuthRefreshPostRequest : ApiAuthRefreshPostRequest =  // ApiAuthRefreshPostRequest | 
+val refreshRequest : RefreshRequest =  // RefreshRequest | 
 
-webService.apiAuthRefreshPost(apiAuthRefreshPostRequest)
+webService.apiAuthRefreshPost(refreshRequest)
 ```
 
 ### Parameters
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **apiAuthRefreshPostRequest** | [**ApiAuthRefreshPostRequest**](ApiAuthRefreshPostRequest.md)|  | [optional]
+ **refreshRequest** | [**RefreshRequest**](RefreshRequest.md)|  | [optional]
 
 ### Return type
 
@@ -281,16 +281,16 @@ Aceptar invitación por código
 val apiClient = ApiClient()
 apiClient.setBearerToken("TOKEN")
 val webService = apiClient.createWebservice(DefaultApi::class.java)
-val apiTalleresInvitacionesAcceptPostRequest : ApiTalleresInvitacionesAcceptPostRequest =  // ApiTalleresInvitacionesAcceptPostRequest | 
+val acceptInvitationRequest : AcceptInvitationRequest =  // AcceptInvitationRequest | 
 
-webService.apiTalleresInvitacionesAcceptPost(apiTalleresInvitacionesAcceptPostRequest)
+webService.apiTalleresInvitacionesAcceptPost(acceptInvitationRequest)
 ```
 
 ### Parameters
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **apiTalleresInvitacionesAcceptPostRequest** | [**ApiTalleresInvitacionesAcceptPostRequest**](ApiTalleresInvitacionesAcceptPostRequest.md)|  | [optional]
+ **acceptInvitationRequest** | [**AcceptInvitationRequest**](AcceptInvitationRequest.md)|  | [optional]
 
 ### Return type
 
@@ -320,16 +320,16 @@ Crear taller (usuario autenticado es propietario)
 val apiClient = ApiClient()
 apiClient.setBearerToken("TOKEN")
 val webService = apiClient.createWebservice(DefaultApi::class.java)
-val apiTalleresPostRequest : ApiTalleresPostRequest =  // ApiTalleresPostRequest | 
+val crearTallerRequest : CrearTallerRequest =  // CrearTallerRequest | 
 
-webService.apiTalleresPost(apiTalleresPostRequest)
+webService.apiTalleresPost(crearTallerRequest)
 ```
 
 ### Parameters
 
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
- **apiTalleresPostRequest** | [**ApiTalleresPostRequest**](ApiTalleresPostRequest.md)|  | [optional]
+ **crearTallerRequest** | [**CrearTallerRequest**](CrearTallerRequest.md)|  | [optional]
 
 ### Return type
 
@@ -360,9 +360,9 @@ val apiClient = ApiClient()
 apiClient.setBearerToken("TOKEN")
 val webService = apiClient.createWebservice(DefaultApi::class.java)
 val tallerId : kotlin.String = tallerId_example // kotlin.String | 
-val apiTalleresTallerIdAlmacenesPostRequest : ApiTalleresTallerIdAlmacenesPostRequest =  // ApiTalleresTallerIdAlmacenesPostRequest | 
+val crearAlmacenRequest : CrearAlmacenRequest =  // CrearAlmacenRequest | 
 
-webService.apiTalleresTallerIdAlmacenesPost(tallerId, apiTalleresTallerIdAlmacenesPostRequest)
+webService.apiTalleresTallerIdAlmacenesPost(tallerId, crearAlmacenRequest)
 ```
 
 ### Parameters
@@ -370,7 +370,7 @@ webService.apiTalleresTallerIdAlmacenesPost(tallerId, apiTalleresTallerIdAlmacen
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **tallerId** | **kotlin.String**|  |
- **apiTalleresTallerIdAlmacenesPostRequest** | [**ApiTalleresTallerIdAlmacenesPostRequest**](ApiTalleresTallerIdAlmacenesPostRequest.md)|  | [optional]
+ **crearAlmacenRequest** | [**CrearAlmacenRequest**](CrearAlmacenRequest.md)|  | [optional]
 
 ### Return type
 
@@ -401,9 +401,9 @@ val apiClient = ApiClient()
 apiClient.setBearerToken("TOKEN")
 val webService = apiClient.createWebservice(DefaultApi::class.java)
 val tallerId : kotlin.String = tallerId_example // kotlin.String | 
-val apiTalleresTallerIdInvitacionesCodigoPostRequest : ApiTalleresTallerIdInvitacionesCodigoPostRequest =  // ApiTalleresTallerIdInvitacionesCodigoPostRequest | 
+val crearInvitacionRequest : CrearInvitacionRequest =  // CrearInvitacionRequest | 
 
-webService.apiTalleresTallerIdInvitacionesCodigoPost(tallerId, apiTalleresTallerIdInvitacionesCodigoPostRequest)
+webService.apiTalleresTallerIdInvitacionesCodigoPost(tallerId, crearInvitacionRequest)
 ```
 
 ### Parameters
@@ -411,7 +411,7 @@ webService.apiTalleresTallerIdInvitacionesCodigoPost(tallerId, apiTalleresTaller
 Name | Type | Description  | Notes
 ------------- | ------------- | ------------- | -------------
  **tallerId** | **kotlin.String**|  |
- **apiTalleresTallerIdInvitacionesCodigoPostRequest** | [**ApiTalleresTallerIdInvitacionesCodigoPostRequest**](ApiTalleresTallerIdInvitacionesCodigoPostRequest.md)|  | [optional]
+ **crearInvitacionRequest** | [**CrearInvitacionRequest**](CrearInvitacionRequest.md)|  | [optional]
 
 ### Return type
 
