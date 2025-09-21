@@ -1,0 +1,247 @@
+openapi: 3.0.3
+info:
+  title: Inventario Repuestos API
+  version: 1.0.0
+  description: API para autenticación, gestión de talleres, almacenes e invitaciones (code-based).
+servers:
+  - url: http://localhost:8080
+paths:
+  /api/auth/register:
+    post:
+      summary: Registro de usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: Usuario creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '409':
+          description: Email o username ya registrado
+  /api/auth/login:
+    post:
+      summary: Login con username o email + password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Tokens y usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Credenciales inválidas
+  /api/auth/refresh:
+    post:
+      summary: Obtener nuevo access token usando refresh token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: Nuevo access token
+  /api/auth/logout:
+    post:
+      summary: Revocar refresh token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /api/auth/oauth/google:
+    post:
+      summary: Login/registro con Google ID Token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idToken:
+                  type: string
+                inviteCode:
+                  type: string
+                device:
+                  type: string
+      responses:
+        '200':
+          description: Tokens y usuario
+  /api/auth/oauth/facebook:
+    post:
+      summary: Login/registro con Facebook access token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                accessToken:
+                  type: string
+                inviteCode:
+                  type: string
+                device:
+                  type: string
+      responses:
+        '200':
+          description: Tokens y usuario
+
+  /api/talleres:
+    post:
+      summary: Crear taller (usuario autenticado es propietario)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre:
+                  type: string
+      responses:
+        '201':
+          description: Taller creado
+    get:
+      summary: Listar talleres del usuario autenticado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de talleres
+
+  /api/talleres/{tallerId}/almacenes:
+    post:
+      summary: Crear almacen en taller
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: tallerId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre:
+                  type: string
+                ubicacion:
+                  type: string
+      responses:
+        '201':
+          description: Almacen creado
+
+  /api/talleres/{tallerId}/invitaciones/codigo:
+    post:
+      summary: Crear invitación por código para un taller
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: tallerId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role:
+                  type: string
+                daysValid:
+                  type: integer
+      responses:
+        '201':
+          description: Código de invitación (raw code sólo se devuelve al creador)
+
+  /api/talleres/invitaciones/accept:
+    post:
+      summary: Aceptar invitación por código
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+      responses:
+        '200':
+          description: Usuario unido al taller
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RegisterRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        email:
+          type: string
+        password:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        inviteCode:
+          type: string
+        rol:
+          type: string
+    LoginRequest:
+      type: object
+      properties:
+        usernameOrEmail:
+          type: string
+        password:
+          type: string
+        device:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        user:
+          type: object
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string

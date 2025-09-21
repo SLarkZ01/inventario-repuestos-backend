@@ -23,6 +23,8 @@ public class User {
     private Date fechaCreacion = new Date();
     private Date fechaUltimaConexion;
     private Date passwordChangedAt;
+    private String provider; // e.g. "google", "facebook"
+    private String providerId;
 
     // getters and setters
     public String getId() { return id; }
@@ -47,4 +49,8 @@ public class User {
     public void setFechaUltimaConexion(Date fechaUltimaConexion) { this.fechaUltimaConexion = fechaUltimaConexion; }
     public Date getPasswordChangedAt() { return passwordChangedAt; }
     public void setPasswordChangedAt(Date passwordChangedAt) { this.passwordChangedAt = passwordChangedAt; }
+    public String getProvider() { return provider; }
+    public void setProvider(String provider) { this.provider = provider; }
+    public String getProviderId() { return providerId; }
+    public void setProviderId(String providerId) { this.providerId = providerId; }
 }
