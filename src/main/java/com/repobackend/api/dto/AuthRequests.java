@@ -30,5 +30,6 @@ public class AuthRequests {
         public String nombre;
         public String apellido;
         public String rol; // optional
+        public String inviteCode; // optional: code to accept invitation to a taller
     }
 }

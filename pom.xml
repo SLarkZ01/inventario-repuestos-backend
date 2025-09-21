@@ -119,6 +119,41 @@
                     </excludes>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>6.6.0</version>
+                <executions>
+                    <execution>
+                        <id>generate-kotlin-client</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/docs/openapi.yaml</inputSpec>
+                            <generatorName>kotlin</generatorName>
+                            <library>jvm-retrofit2</library>
+                            <output>${project.basedir}/docs/generated/android</output>
+                            <additionalProperties>
+                                <dateLibrary>java8</dateLibrary>
+                            </additionalProperties>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>generate-typescript-client</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/docs/openapi.yaml</inputSpec>
+                            <generatorName>typescript-axios</generatorName>
+                            <output>${project.basedir}/docs/generated/nextjs</output>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

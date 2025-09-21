@@ -16,6 +16,9 @@ import org.springframework.stereotype.Service;
 
 import com.repobackend.api.dto.AuthRequests.LoginRequest;
 import com.repobackend.api.dto.AuthRequests.RegisterRequest;
+import com.repobackend.api.service.TallerService;
+import com.repobackend.api.service.OAuthService;
+import java.util.Map;
 import com.repobackend.api.model.RefreshToken;
 import com.repobackend.api.model.User;
 import com.repobackend.api.repository.RefreshTokenRepository;
@@ -31,11 +34,16 @@ public class AuthService {
     private final RefreshTokenRepository refreshTokenRepository;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private final JwtUtil jwtUtil;
+    private final TallerService tallerService;
+    private final OAuthService oauthService;
 
-    public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, JwtUtil jwtUtil) {
+    public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, JwtUtil jwtUtil,
+            TallerService tallerService, OAuthService oauthService) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.jwtUtil = jwtUtil;
+        this.tallerService = tallerService;
+        this.oauthService = oauthService;
     }
 
     public ResponseEntity<?> register(RegisterRequest req) {
@@ -51,13 +59,38 @@ public class AuthService {
         u.setPassword(passwordEncoder.encode(req.password));
         u.setNombre(req.nombre);
         u.setApellido(req.apellido);
-        u.setRoles(Arrays.asList(req.rol != null ? req.rol : "VENDEDOR"));
+        // If the user registers with an inviteCode, do NOT give global ADMIN role by default.
+        // If there's no inviteCode, default to ADMIN (user creates talleres).
+        if (req.inviteCode != null && !req.inviteCode.isBlank()) {
+            u.setRoles(Arrays.asList(req.rol != null ? req.rol : "USER"));
+        } else {
+            u.setRoles(Arrays.asList(req.rol != null ? req.rol : "ADMIN"));
+        }
         u.setActivo(true);
         u.setFechaCreacion(new Date());
         userRepository.save(u);
-        // Do not return password in response (it's ignored by Jackson due to @JsonIgnore)
-        return ResponseEntity.status(HttpStatus.CREATED).body(u);
+        Map<String, Object> joined = null;
+        if (req.inviteCode != null && !req.inviteCode.isBlank()) {
+            joined = tallerService.acceptInvitationByCode(u.getId(), req.inviteCode);
+        }
+        // generate tokens
+        String accessToken = jwtUtil.generateToken(u.getId(), com.repobackend.api.config.SecurityConstants.JWT_EXPIRATION_MS);
+        String rawRefresh = java.util.UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
+        String refreshHash = sha256(rawRefresh);
+        RefreshToken rt = new RefreshToken();
+        rt.setUserId(u.getId());
+        rt.setTokenHash(refreshHash);
+        rt.setIssuedAt(new Date());
+        rt.setExpiresAt(new Date(System.currentTimeMillis() + com.repobackend.api.config.SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
+        refreshTokenRepository.save(rt);
+        var resp = new java.util.HashMap<String, Object>();
+        resp.put("accessToken", accessToken);
+        resp.put("refreshToken", rawRefresh);
+        resp.put("user", u);
+        if (joined != null) resp.put("joined", joined);
+        return ResponseEntity.status(HttpStatus.CREATED).body(resp);
     }
+
 
     public ResponseEntity<?> login(LoginRequest req, HttpServletRequest request) {
         Optional<User> maybe = userRepository.findByUsername(req.usernameOrEmail);
@@ -132,5 +165,135 @@ public class AuthService {
             refreshTokenRepository.save(rt);
         }
         return ResponseEntity.ok().build();
+    }
+
+    public ResponseEntity<?> oauthLoginGoogle(String idToken, String inviteCode, String device) {
+        Map<String, Object> info;
+        try {
+            info = oauthService.verifyGoogleToken(idToken);
+        } catch (com.repobackend.api.service.OAuthException oex) {
+            return ResponseEntity.status(oex.getStatusCode() == 0 ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(oex.getStatusCode())).body(oex.getMessage());
+        }
+        if (info == null || info.get("email") == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token Google inválido");
+        String email = (String) info.get("email");
+        String name = (String) info.getOrDefault("name", "");
+        // Prefer to find by providerId if present
+        Object sub = info.get("sub");
+        Optional<User> maybe = Optional.empty();
+        if (sub != null) {
+            maybe = userRepository.findByProviderAndProviderId("google", String.valueOf(sub));
+        }
+        if (maybe.isEmpty()) maybe = userRepository.findByEmail(email);
+        User u;
+        if (maybe.isPresent()) {
+            u = maybe.get();
+            // ensure provider info is set when missing
+            if (sub != null && (u.getProvider() == null || u.getProviderId() == null)) {
+                u.setProvider("google");
+                u.setProviderId(String.valueOf(sub));
+                userRepository.save(u);
+            }
+        } else {
+            u = new User();
+            String generatedUsername = email.split("@")[0] + java.util.UUID.randomUUID().toString().substring(0,4);
+            u.setUsername(generatedUsername);
+            u.setEmail(email);
+            u.setNombre(name);
+            u.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+            if (inviteCode != null && !inviteCode.isBlank()) u.setRoles(Arrays.asList("USER")); else u.setRoles(Arrays.asList("ADMIN"));
+            // set provider info from Google token
+            if (sub != null) {
+                u.setProvider("google");
+                u.setProviderId(String.valueOf(sub));
+            }
+            u.setActivo(true);
+            u.setFechaCreacion(new Date());
+            userRepository.save(u);
+        }
+        Map<String, Object> joined = null;
+        if (inviteCode != null && !inviteCode.isBlank()) {
+            joined = tallerService.acceptInvitationByCode(u.getId(), inviteCode);
+        }
+        String accessToken = jwtUtil.generateToken(u.getId(), com.repobackend.api.config.SecurityConstants.JWT_EXPIRATION_MS);
+        String rawRefresh = java.util.UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
+        String refreshHash = sha256(rawRefresh);
+        RefreshToken rt = new RefreshToken();
+        rt.setUserId(u.getId());
+        rt.setTokenHash(refreshHash);
+        rt.setIssuedAt(new Date());
+        rt.setExpiresAt(new Date(System.currentTimeMillis() + com.repobackend.api.config.SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
+        rt.setDeviceInfo(device);
+        refreshTokenRepository.save(rt);
+        var resp = new java.util.HashMap<String, Object>();
+        resp.put("accessToken", accessToken);
+        resp.put("refreshToken", rawRefresh);
+        resp.put("user", u);
+        if (joined != null) resp.put("joined", joined);
+        return ResponseEntity.ok(resp);
+    }
+
+    public ResponseEntity<?> oauthLoginFacebook(String accessTokenFb, String inviteCode, String device) {
+        Map<String, Object> info;
+        try {
+            info = oauthService.verifyFacebookToken(accessTokenFb);
+        } catch (com.repobackend.api.service.OAuthException oex) {
+            return ResponseEntity.status(oex.getStatusCode() == 0 ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(oex.getStatusCode())).body(oex.getMessage());
+        }
+        if (info == null || info.get("email") == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token Facebook inválido");
+        String email = (String) info.get("email");
+        String name = (String) info.getOrDefault("name", "");
+        // Prefer to find by providerId if present
+        Object fbId = info.get("id");
+        Optional<User> maybe = Optional.empty();
+        if (fbId != null) {
+            maybe = userRepository.findByProviderAndProviderId("facebook", String.valueOf(fbId));
+        }
+        if (maybe.isEmpty()) maybe = userRepository.findByEmail(email);
+        User u;
+        if (maybe.isPresent()) {
+            u = maybe.get();
+            // ensure provider info is set when missing
+            if (fbId != null && (u.getProvider() == null || u.getProviderId() == null)) {
+                u.setProvider("facebook");
+                u.setProviderId(String.valueOf(fbId));
+                userRepository.save(u);
+            }
+        } else {
+            u = new User();
+            String generatedUsername = email.split("@")[0] + java.util.UUID.randomUUID().toString().substring(0,4);
+            u.setUsername(generatedUsername);
+            u.setEmail(email);
+            u.setNombre(name);
+            u.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
+            if (inviteCode != null && !inviteCode.isBlank()) u.setRoles(Arrays.asList("USER")); else u.setRoles(Arrays.asList("ADMIN"));
+            // set provider info from Facebook response
+            if (fbId != null) {
+                u.setProvider("facebook");
+                u.setProviderId(String.valueOf(fbId));
+            }
+            u.setActivo(true);
+            u.setFechaCreacion(new Date());
+            userRepository.save(u);
+        }
+        Map<String, Object> joined = null;
+        if (inviteCode != null && !inviteCode.isBlank()) {
+            joined = tallerService.acceptInvitationByCode(u.getId(), inviteCode);
+        }
+        String accessToken = jwtUtil.generateToken(u.getId(), com.repobackend.api.config.SecurityConstants.JWT_EXPIRATION_MS);
+        String rawRefresh = java.util.UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
+        String refreshHash = sha256(rawRefresh);
+        RefreshToken rt = new RefreshToken();
+        rt.setUserId(u.getId());
+        rt.setTokenHash(refreshHash);
+        rt.setIssuedAt(new Date());
+        rt.setExpiresAt(new Date(System.currentTimeMillis() + com.repobackend.api.config.SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
+        rt.setDeviceInfo(device);
+        refreshTokenRepository.save(rt);
+        var resp = new java.util.HashMap<String, Object>();
+        resp.put("accessToken", accessToken);
+        resp.put("refreshToken", rawRefresh);
+        resp.put("user", u);
+        if (joined != null) resp.put("joined", joined);
+        return ResponseEntity.ok(resp);
     }
 }

@@ -43,4 +43,20 @@ public class AuthController {
         String refresh = body.get("refreshToken");
         return authService.logout(refresh);
     }
+
+    @PostMapping("/oauth/google")
+    public ResponseEntity<?> oauthGoogle(@RequestBody java.util.Map<String, String> body) {
+        String idToken = body.get("idToken");
+        String inviteCode = body.get("inviteCode");
+        String device = body.get("device");
+        return authService.oauthLoginGoogle(idToken, inviteCode, device);
+    }
+
+    @PostMapping("/oauth/facebook")
+    public ResponseEntity<?> oauthFacebook(@RequestBody java.util.Map<String, String> body) {
+        String accessToken = body.get("accessToken");
+        String inviteCode = body.get("inviteCode");
+        String device = body.get("device");
+        return authService.oauthLoginFacebook(accessToken, inviteCode, device);
+    }
 }
