@@ -492,6 +492,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
         },
         /**
          * 
+         * @summary Revocar todos los refresh tokens del usuario autenticado
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiAuthRevokeAllPost: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/auth/revoke-all`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
          * @summary Listar talleres del usuario autenticado
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -762,6 +796,16 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Revocar todos los refresh tokens del usuario autenticado
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiAuthRevokeAllPost(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<void>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiAuthRevokeAllPost(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * 
          * @summary Listar talleres del usuario autenticado
          * @param {*} [options] Override http request option.
          * @throws {RequiredError}
@@ -885,6 +929,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
          */
         apiAuthRegisterPost(registerRequest: RegisterRequest, options?: any): AxiosPromise<AuthResponse> {
             return localVarFp.apiAuthRegisterPost(registerRequest, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
+         * @summary Revocar todos los refresh tokens del usuario autenticado
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiAuthRevokeAllPost(options?: any): AxiosPromise<void> {
+            return localVarFp.apiAuthRevokeAllPost(options).then((request) => request(axios, basePath));
         },
         /**
          * 
@@ -1017,6 +1070,17 @@ export class DefaultApi extends BaseAPI {
      */
     public apiAuthRegisterPost(registerRequest: RegisterRequest, options?: AxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiAuthRegisterPost(registerRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Revocar todos los refresh tokens del usuario autenticado
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiAuthRevokeAllPost(options?: AxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiAuthRevokeAllPost(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

@@ -50,6 +50,7 @@ Class | Method | HTTP request | Description
 *DefaultApi* | [**apiAuthOauthGooglePost**](docs/DefaultApi.md#apiauthoauthgooglepost) | **POST** api/auth/oauth/google | Login/registro con Google ID Token
 *DefaultApi* | [**apiAuthRefreshPost**](docs/DefaultApi.md#apiauthrefreshpost) | **POST** api/auth/refresh | Obtener nuevo access token usando refresh token
 *DefaultApi* | [**apiAuthRegisterPost**](docs/DefaultApi.md#apiauthregisterpost) | **POST** api/auth/register | Registro de usuario
+*DefaultApi* | [**apiAuthRevokeAllPost**](docs/DefaultApi.md#apiauthrevokeallpost) | **POST** api/auth/revoke-all | Revocar todos los refresh tokens del usuario autenticado
 *DefaultApi* | [**apiTalleresGet**](docs/DefaultApi.md#apitalleresget) | **GET** api/talleres | Listar talleres del usuario autenticado
 *DefaultApi* | [**apiTalleresInvitacionesAcceptPost**](docs/DefaultApi.md#apitalleresinvitacionesacceptpost) | **POST** api/talleres/invitaciones/accept | Aceptar invitación por código
 *DefaultApi* | [**apiTalleresPost**](docs/DefaultApi.md#apitallerespost) | **POST** api/talleres | Crear taller (usuario autenticado es propietario)

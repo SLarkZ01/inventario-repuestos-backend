@@ -167,6 +167,24 @@ public class AuthService {
         return ResponseEntity.ok().build();
     }
 
+    // Revoke all refresh tokens for the user identified by the provided access token (JWT)
+    public ResponseEntity<?> revokeAllRefreshTokens(String bearerToken) {
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing or invalid Authorization header");
+        String token = bearerToken.substring("Bearer ".length());
+        String userId;
+        try {
+            userId = jwtUtil.parseToken(token).getSubject();
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid access token");
+        }
+        java.util.List<RefreshToken> tokens = refreshTokenRepository.findByUserId(userId);
+        for (RefreshToken rt : tokens) {
+            rt.setRevoked(true);
+        }
+        refreshTokenRepository.saveAll(tokens);
+        return ResponseEntity.ok().build();
+    }
+
     public ResponseEntity<?> oauthLoginGoogle(String idToken, String inviteCode, String device) {
         Map<String, Object> info;
         try {
@@ -175,8 +193,10 @@ public class AuthService {
             return ResponseEntity.status(oex.getStatusCode() == 0 ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(oex.getStatusCode())).body(oex.getMessage());
         }
         if (info == null || info.get("email") == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token Google inválido");
-        String email = (String) info.get("email");
-        String name = (String) info.getOrDefault("name", "");
+    String email = (String) info.get("email");
+    String name = (String) info.getOrDefault("name", "");
+    String givenName = (String) info.getOrDefault("given_name", "");
+    String familyName = (String) info.getOrDefault("family_name", "");
         // Prefer to find by providerId if present
         Object sub = info.get("sub");
         Optional<User> maybe = Optional.empty();
@@ -193,12 +213,44 @@ public class AuthService {
                 u.setProviderId(String.valueOf(sub));
                 userRepository.save(u);
             }
+            // If the user exists but doesn't have nombre/apellido set, try to populate from token
+            boolean needsSave = false;
+            if ((u.getNombre() == null || u.getNombre().isBlank())) {
+                String first = "";
+                if (givenName != null && !givenName.isBlank()) first = givenName;
+                else if (name != null && !name.isBlank()) {
+                    String[] parts = name.trim().split("\\s+");
+                    first = parts.length > 0 ? parts[0] : "";
+                }
+                if (!first.isBlank()) { u.setNombre(first); needsSave = true; }
+            }
+            if ((u.getApellido() == null || u.getApellido().isBlank())) {
+                String last = "";
+                if (familyName != null && !familyName.isBlank()) last = familyName;
+                else if (name != null && !name.isBlank()) {
+                    String[] parts = name.trim().split("\\s+");
+                    if (parts.length > 1) last = String.join(" ", Arrays.copyOfRange(parts, 1, parts.length));
+                }
+                if (!last.isBlank()) { u.setApellido(last); needsSave = true; }
+            }
+            if (needsSave) userRepository.save(u);
         } else {
             u = new User();
             String generatedUsername = email.split("@")[0] + java.util.UUID.randomUUID().toString().substring(0,4);
             u.setUsername(generatedUsername);
             u.setEmail(email);
-            u.setNombre(name);
+            // prefer explicit given_name/family_name when available
+            String first = "";
+            String last = "";
+            if (givenName != null && !givenName.isBlank()) first = givenName;
+            if (familyName != null && !familyName.isBlank()) last = familyName;
+            if (first.isBlank() && name != null && !name.isBlank()) {
+                String[] parts = name.trim().split("\\s+");
+                first = parts.length > 0 ? parts[0] : "";
+                if (parts.length > 1) last = String.join(" ", Arrays.copyOfRange(parts, 1, parts.length));
+            }
+            u.setNombre(first);
+            u.setApellido(last);
             u.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
             if (inviteCode != null && !inviteCode.isBlank()) u.setRoles(Arrays.asList("USER")); else u.setRoles(Arrays.asList("ADMIN"));
             // set provider info from Google token

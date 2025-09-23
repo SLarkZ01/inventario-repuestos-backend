@@ -93,6 +93,15 @@ paths:
         '200':
           description: Tokens y usuario
 
+  /api/auth/revoke-all:
+    post:
+      summary: Revocar todos los refresh tokens del usuario autenticado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: OK
+
   /api/talleres:
     post:
       summary: Crear taller (usuario autenticado es propietario)

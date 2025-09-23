@@ -94,6 +94,17 @@ interface DefaultApi {
     fun apiAuthRegisterPost(@Body registerRequest: RegisterRequest): Call<AuthResponse>
 
     /**
+     * Revocar todos los refresh tokens del usuario autenticado
+     * 
+     * Responses:
+     *  - 200: OK
+     *
+     * @return [Call]<[Unit]>
+     */
+    @POST("api/auth/revoke-all")
+    fun apiAuthRevokeAllPost(): Call<Unit>
+
+    /**
      * Listar talleres del usuario autenticado
      * 
      * Responses:

@@ -59,4 +59,9 @@ public class AuthController {
         String device = body.get("device");
         return authService.oauthLoginFacebook(accessToken, inviteCode, device);
     }
+
+    @PostMapping("/revoke-all")
+    public ResponseEntity<?> revokeAll(@org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String authorization) {
+        return authService.revokeAllRefreshTokens(authorization);
+    }
 }
