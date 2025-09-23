@@ -13,6 +13,7 @@ docs/OAuthFacebookRequest.md
 docs/OAuthGoogleRequest.md
 docs/RefreshRequest.md
 docs/RegisterRequest.md
+docs/UserProfile.md
 gradle/wrapper/gradle-wrapper.jar
 gradle/wrapper/gradle-wrapper.properties
 gradlew
@@ -44,3 +45,4 @@ src/main/kotlin/org/openapitools/client/models/OAuthFacebookRequest.kt
 src/main/kotlin/org/openapitools/client/models/OAuthGoogleRequest.kt
 src/main/kotlin/org/openapitools/client/models/RefreshRequest.kt
 src/main/kotlin/org/openapitools/client/models/RegisterRequest.kt
+src/main/kotlin/org/openapitools/client/models/UserProfile.kt

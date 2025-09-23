@@ -46,6 +46,7 @@ Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
 *DefaultApi* | [**apiAuthLoginPost**](docs/DefaultApi.md#apiauthloginpost) | **POST** api/auth/login | Login con username o email + password
 *DefaultApi* | [**apiAuthLogoutPost**](docs/DefaultApi.md#apiauthlogoutpost) | **POST** api/auth/logout | Revocar refresh token
+*DefaultApi* | [**apiAuthMeGet**](docs/DefaultApi.md#apiauthmeget) | **GET** api/auth/me | Obtener perfil del usuario autenticado
 *DefaultApi* | [**apiAuthOauthFacebookPost**](docs/DefaultApi.md#apiauthoauthfacebookpost) | **POST** api/auth/oauth/facebook | Login/registro con Facebook access token
 *DefaultApi* | [**apiAuthOauthGooglePost**](docs/DefaultApi.md#apiauthoauthgooglepost) | **POST** api/auth/oauth/google | Login/registro con Google ID Token
 *DefaultApi* | [**apiAuthRefreshPost**](docs/DefaultApi.md#apiauthrefreshpost) | **POST** api/auth/refresh | Obtener nuevo access token usando refresh token
@@ -73,6 +74,7 @@ Class | Method | HTTP request | Description
  - [org.openapitools.client.models.OAuthGoogleRequest](docs/OAuthGoogleRequest.md)
  - [org.openapitools.client.models.RefreshRequest](docs/RefreshRequest.md)
  - [org.openapitools.client.models.RegisterRequest](docs/RegisterRequest.md)
+ - [org.openapitools.client.models.UserProfile](docs/UserProfile.md)
 
 
 <a id="documentation-for-authorization"></a>

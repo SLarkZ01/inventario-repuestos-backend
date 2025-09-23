@@ -185,6 +185,58 @@ public class AuthService {
         return ResponseEntity.ok().build();
     }
 
+    // New helper: revoke all refresh tokens for a given userId (used when Authentication supplies userId)
+    public ResponseEntity<?> revokeAllRefreshTokensForUser(String userId) {
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        java.util.List<RefreshToken> tokens = refreshTokenRepository.findByUserId(userId);
+        for (RefreshToken rt : tokens) rt.setRevoked(true);
+        refreshTokenRepository.saveAll(tokens);
+        return ResponseEntity.ok().build();
+    }
+
+    // New helper: get current user by id (used when Authentication supplies userId)
+    public ResponseEntity<?> getCurrentUserById(String userId) {
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        java.util.Optional<User> maybe = userRepository.findById(userId);
+        if (maybe.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        User u = maybe.get();
+        com.repobackend.api.dto.UserProfile profile = new com.repobackend.api.dto.UserProfile();
+        profile.id = u.getId();
+        profile.username = u.getUsername();
+        profile.email = u.getEmail();
+        profile.nombre = u.getNombre();
+        profile.apellido = u.getApellido();
+        profile.roles = u.getRoles();
+        profile.activo = u.isActivo();
+        profile.fechaCreacion = u.getFechaCreacion();
+        return ResponseEntity.ok(profile);
+    }
+
+    public ResponseEntity<?> getCurrentUser(String bearerToken) {
+        if (bearerToken == null || !bearerToken.startsWith("Bearer ")) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Missing or invalid Authorization header");
+        String token = bearerToken.substring("Bearer ".length());
+        String userId;
+        try {
+            userId = jwtUtil.parseToken(token).getSubject();
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid access token");
+        }
+        Optional<User> maybe = userRepository.findById(userId);
+        if (maybe.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        User u = maybe.get();
+        // Map to UserProfile DTO to avoid leaking sensitive fields
+        com.repobackend.api.dto.UserProfile profile = new com.repobackend.api.dto.UserProfile();
+        profile.id = u.getId();
+        profile.username = u.getUsername();
+        profile.email = u.getEmail();
+        profile.nombre = u.getNombre();
+        profile.apellido = u.getApellido();
+        profile.roles = u.getRoles();
+        profile.activo = u.isActivo();
+        profile.fechaCreacion = u.getFechaCreacion();
+        return ResponseEntity.ok(profile);
+    }
+
     public ResponseEntity<?> oauthLoginGoogle(String idToken, String inviteCode, String device) {
         Map<String, Object> info;
         try {

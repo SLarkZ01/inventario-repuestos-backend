@@ -269,6 +269,61 @@ export interface RegisterRequest {
      */
     'inviteCode'?: string;
 }
+/**
+ * 
+ * @export
+ * @interface UserProfile
+ */
+export interface UserProfile {
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfile
+     */
+    'id'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfile
+     */
+    'username'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfile
+     */
+    'email'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfile
+     */
+    'nombre'?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfile
+     */
+    'apellido'?: string;
+    /**
+     * 
+     * @type {Array<string>}
+     * @memberof UserProfile
+     */
+    'roles'?: Array<string>;
+    /**
+     * 
+     * @type {boolean}
+     * @memberof UserProfile
+     */
+    'activo'?: boolean;
+    /**
+     * 
+     * @type {string}
+     * @memberof UserProfile
+     */
+    'fechaCreacion'?: string;
+}
 
 /**
  * DefaultApi - axios parameter creator
@@ -340,6 +395,40 @@ export const DefaultApiAxiosParamCreator = function (configuration?: Configurati
             let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
             localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
             localVarRequestOptions.data = serializeDataIfNeeded(apiAuthLogoutPostRequest, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
+        /**
+         * 
+         * @summary Obtener perfil del usuario autenticado
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiAuthMeGet: async (options: AxiosRequestConfig = {}): Promise<RequestArgs> => {
+            const localVarPath = `/api/auth/me`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'GET', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication bearerAuth required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
 
             return {
                 url: toPathString(localVarUrlObj),
@@ -746,6 +835,16 @@ export const DefaultApiFp = function(configuration?: Configuration) {
         },
         /**
          * 
+         * @summary Obtener perfil del usuario autenticado
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiAuthMeGet(options?: AxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<UserProfile>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiAuthMeGet(options);
+            return createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration);
+        },
+        /**
+         * 
          * @summary Login/registro con Facebook access token
          * @param {OAuthFacebookRequest} [oAuthFacebookRequest] 
          * @param {*} [options] Override http request option.
@@ -886,6 +985,15 @@ export const DefaultApiFactory = function (configuration?: Configuration, basePa
         },
         /**
          * 
+         * @summary Obtener perfil del usuario autenticado
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiAuthMeGet(options?: any): AxiosPromise<UserProfile> {
+            return localVarFp.apiAuthMeGet(options).then((request) => request(axios, basePath));
+        },
+        /**
+         * 
          * @summary Login/registro con Facebook access token
          * @param {OAuthFacebookRequest} [oAuthFacebookRequest] 
          * @param {*} [options] Override http request option.
@@ -1016,6 +1124,17 @@ export class DefaultApi extends BaseAPI {
      */
     public apiAuthLogoutPost(apiAuthLogoutPostRequest?: ApiAuthLogoutPostRequest, options?: AxiosRequestConfig) {
         return DefaultApiFp(this.configuration).apiAuthLogoutPost(apiAuthLogoutPostRequest, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * 
+     * @summary Obtener perfil del usuario autenticado
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof DefaultApi
+     */
+    public apiAuthMeGet(options?: AxiosRequestConfig) {
+        return DefaultApiFp(this.configuration).apiAuthMeGet(options).then((request) => request(this.axios, this.basePath));
     }
 
     /**

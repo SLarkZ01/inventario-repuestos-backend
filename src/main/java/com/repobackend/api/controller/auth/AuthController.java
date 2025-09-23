@@ -1,6 +1,7 @@
 package com.repobackend.api.controller.auth;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -61,7 +62,14 @@ public class AuthController {
     }
 
     @PostMapping("/revoke-all")
-    public ResponseEntity<?> revokeAll(@org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String authorization) {
-        return authService.revokeAllRefreshTokens(authorization);
+    public ResponseEntity<?> revokeAll(org.springframework.security.core.Authentication authentication) {
+        String userId = authentication == null ? null : authentication.getName();
+        return authService.revokeAllRefreshTokensForUser(userId);
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> me(org.springframework.security.core.Authentication authentication) {
+        String userId = authentication == null ? null : authentication.getName();
+        return authService.getCurrentUserById(userId);
     }
 }

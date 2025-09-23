@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -50,7 +51,12 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable());
         http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
     http.authorizeHttpRequests(auth -> auth
-        .requestMatchers("/api/auth/**").permitAll()
+        // Public auth endpoints
+        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
+        .requestMatchers(HttpMethod.POST, "/api/auth/oauth/google", "/api/auth/oauth/facebook").permitAll()
+        // Secure these auth endpoints
+        .requestMatchers("/api/auth/me", "/api/auth/revoke-all").authenticated()
+        // everything else requires authentication
         .anyRequest().authenticated()
     );
 

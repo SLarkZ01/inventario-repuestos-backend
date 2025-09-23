@@ -143,3 +143,10 @@ git push origin feature/mi-mejora
 - Si necesitas ayuda con la configuración, asigna un issue en este repo y etiqueta a los responsables.
 
 ---
+
+## Notas sobre autenticación y perfil de usuario
+
+- Nuevo endpoint: `GET /api/auth/me` — Devuelve el perfil del usuario autenticado utilizando el `Authorization: Bearer <accessToken>`.
+- La respuesta es un objeto `UserProfile` con los campos públicos: `id`, `username`, `email`, `nombre`, `apellido`, `roles`, `activo` y `fechaCreacion`.
+- Política de roles en registro: los clientes NO pueden enviar un campo `rol` al registrarse. El servidor asigna por defecto `ADMIN` cuando el usuario se registra sin `inviteCode` (es decir, crea talleres), y asigna `USER` si se registra usando un `inviteCode` para un taller.
+- Para el cierre de sesión completo con proveedores (Google/Facebook), la app cliente debe llamar también a los métodos de logout del SDK del proveedor (por ejemplo `GoogleSignInClient.signOut()`), ya que la revocación de tokens en el backend no cierra la sesión en el SDK del dispositivo.

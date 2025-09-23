@@ -102,6 +102,21 @@ paths:
         '200':
           description: OK
 
+  /api/auth/me:
+    get:
+      summary: Obtener perfil del usuario autenticado
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Perfil del usuario
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized
+
   /api/talleres:
     post:
       summary: Crear taller (usuario autenticado es propietario)
@@ -208,6 +223,28 @@ components:
         inviteCode:
           type: string
         # `rol` removed: role is assigned server-side and not accepted from clients
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+        username:
+          type: string
+        email:
+          type: string
+        nombre:
+          type: string
+        apellido:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        activo:
+          type: boolean
+        fechaCreacion:
+          type: string
+          format: date-time
     LoginRequest:
       type: object
       properties:
