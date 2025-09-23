@@ -22,17 +22,22 @@ import com.squareup.moshi.JsonClass
 /**
  * 
  *
+ * @param nombre 
+ * @param apellido 
  * @param username 
  * @param email 
  * @param password 
- * @param nombre 
- * @param apellido 
  * @param inviteCode 
- * @param rol 
  */
 
 
 data class RegisterRequest (
+
+    @Json(name = "nombre")
+    val nombre: kotlin.String,
+
+    @Json(name = "apellido")
+    val apellido: kotlin.String,
 
     @Json(name = "username")
     val username: kotlin.String? = null,
@@ -43,17 +48,8 @@ data class RegisterRequest (
     @Json(name = "password")
     val password: kotlin.String? = null,
 
-    @Json(name = "nombre")
-    val nombre: kotlin.String? = null,
-
-    @Json(name = "apellido")
-    val apellido: kotlin.String? = null,
-
     @Json(name = "inviteCode")
-    val inviteCode: kotlin.String? = null,
-
-    @Json(name = "rol")
-    val rol: kotlin.String? = null
+    val inviteCode: kotlin.String? = null
 
 )
 

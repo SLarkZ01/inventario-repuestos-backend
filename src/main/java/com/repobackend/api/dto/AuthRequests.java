@@ -31,9 +31,12 @@ public class AuthRequests {
         @Size(min = 8)
         public String password;
 
+        @NotBlank
         public String nombre;
+
+        @NotBlank
         public String apellido;
-        public String rol; // optional
+
         public String inviteCode; // optional: code to accept invitation to a taller
     }
 

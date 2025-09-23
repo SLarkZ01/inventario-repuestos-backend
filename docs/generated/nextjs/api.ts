@@ -255,25 +255,19 @@ export interface RegisterRequest {
      * @type {string}
      * @memberof RegisterRequest
      */
-    'nombre'?: string;
+    'nombre': string;
     /**
      * 
      * @type {string}
      * @memberof RegisterRequest
      */
-    'apellido'?: string;
+    'apellido': string;
     /**
      * 
      * @type {string}
      * @memberof RegisterRequest
      */
     'inviteCode'?: string;
-    /**
-     * 
-     * @type {string}
-     * @memberof RegisterRequest
-     */
-    'rol'?: string;
 }
 
 /**

@@ -62,9 +62,9 @@ public class AuthService {
         // If the user registers with an inviteCode, do NOT give global ADMIN role by default.
         // If there's no inviteCode, default to ADMIN (user creates talleres).
         if (req.inviteCode != null && !req.inviteCode.isBlank()) {
-            u.setRoles(Arrays.asList(req.rol != null ? req.rol : "USER"));
+            u.setRoles(Arrays.asList("USER"));
         } else {
-            u.setRoles(Arrays.asList(req.rol != null ? req.rol : "ADMIN"));
+            u.setRoles(Arrays.asList("ADMIN"));
         }
         u.setActivo(true);
         u.setFechaCreacion(new Date());
@@ -217,21 +217,33 @@ public class AuthService {
             boolean needsSave = false;
             if ((u.getNombre() == null || u.getNombre().isBlank())) {
                 String first = "";
+                String last = "";
                 if (givenName != null && !givenName.isBlank()) first = givenName;
                 else if (name != null && !name.isBlank()) {
                     String[] parts = name.trim().split("\\s+");
-                    first = parts.length > 0 ? parts[0] : "";
+                    if (parts.length == 1) { first = parts[0]; }
+                    else if (parts.length == 2) { first = parts[0]; last = parts[1]; }
+                    else { // parts.length >= 3 -> assume last two tokens are family names
+                        first = String.join(" ", Arrays.copyOfRange(parts, 0, parts.length - 2));
+                        last = String.join(" ", Arrays.copyOfRange(parts, parts.length - 2, parts.length));
+                    }
                 }
                 if (!first.isBlank()) { u.setNombre(first); needsSave = true; }
+                if (!last.isBlank() && (u.getApellido() == null || u.getApellido().isBlank())) { u.setApellido(last); needsSave = true; }
             }
             if ((u.getApellido() == null || u.getApellido().isBlank())) {
-                String last = "";
-                if (familyName != null && !familyName.isBlank()) last = familyName;
-                else if (name != null && !name.isBlank()) {
-                    String[] parts = name.trim().split("\\s+");
-                    if (parts.length > 1) last = String.join(" ", Arrays.copyOfRange(parts, 1, parts.length));
+                // apellido may have been set in the previous block from fallback; if not, try family_name or conservative fallback
+                String last = u.getApellido();
+                if (last == null || last.isBlank()) {
+                    if (familyName != null && !familyName.isBlank()) last = familyName;
+                    else if (name != null && !name.isBlank()) {
+                        String[] parts = name.trim().split("\\s+");
+                        if (parts.length == 1) { last = ""; }
+                        else if (parts.length == 2) { last = parts[1]; }
+                        else { last = String.join(" ", Arrays.copyOfRange(parts, parts.length - 2, parts.length)); }
+                    }
                 }
-                if (!last.isBlank()) { u.setApellido(last); needsSave = true; }
+                if (last != null && !last.isBlank()) { u.setApellido(last); needsSave = true; }
             }
             if (needsSave) userRepository.save(u);
         } else {
@@ -246,8 +258,9 @@ public class AuthService {
             if (familyName != null && !familyName.isBlank()) last = familyName;
             if (first.isBlank() && name != null && !name.isBlank()) {
                 String[] parts = name.trim().split("\\s+");
-                first = parts.length > 0 ? parts[0] : "";
-                if (parts.length > 1) last = String.join(" ", Arrays.copyOfRange(parts, 1, parts.length));
+                if (parts.length == 1) { first = parts[0]; }
+                else if (parts.length == 2) { first = parts[0]; last = parts[1]; }
+                else { first = String.join(" ", Arrays.copyOfRange(parts, 0, parts.length - 2)); last = String.join(" ", Arrays.copyOfRange(parts, parts.length - 2, parts.length)); }
             }
             u.setNombre(first);
             u.setApellido(last);

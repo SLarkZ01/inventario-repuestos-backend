@@ -191,6 +191,9 @@ components:
   schemas:
     RegisterRequest:
       type: object
+      required:
+        - nombre
+        - apellido
       properties:
         username:
           type: string
@@ -204,8 +207,7 @@ components:
           type: string
         inviteCode:
           type: string
-        rol:
-          type: string
+        # `rol` removed: role is assigned server-side and not accepted from clients
     LoginRequest:
       type: object
       properties:
