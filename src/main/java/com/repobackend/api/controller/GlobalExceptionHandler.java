@@ -6,6 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.validation.FieldError;
+// imports consolidated above
 
 import com.repobackend.api.service.OAuthException;
 
@@ -21,5 +24,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<?> handleGeneric(Exception ex) {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Internal server error"));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleValidation(MethodArgumentNotValidException ex) {
+        var errors = new java.util.HashMap<String, String>();
+        for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
+            errors.put(fe.getField(), fe.getDefaultMessage());
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(java.util.Map.of("errors", errors));
     }
 }
