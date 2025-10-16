@@ -2,26 +2,36 @@ package com.repobackend.api.dto;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
+
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 
 public class ProductoRequest {
+    @JsonAlias({"id", "idString"})
     private String idString;
 
-    @NotBlank
+    @NotBlank(message = "nombre no debe estar vacío")
+    @JsonAlias({"nombre", " nombre "})
     private String nombre;
 
+    @JsonAlias({"descripcion", " descripcion "})
     private String descripcion;
 
+    @JsonAlias({"precio", " precio "})
     private Double precio;
 
     @Min(0)
+    @JsonAlias({"stock", " stock "})
     private Integer stock;
 
+    @JsonAlias({"categoriaId", " categoriaId "})
     private String categoriaId;
 
+    @JsonAlias({"imagenRecurso", " imagenRecurso "})
     private Integer imagenRecurso;
 
+    @JsonAlias({"listaMedios", " listaMedios "})
     private List<java.util.Map<String, Object>> listaMedios;
 
     public String getIdString() {
@@ -37,7 +47,7 @@ public class ProductoRequest {
     }
 
     public void setNombre(String nombre) {
-        this.nombre = nombre;
+        this.nombre = nombre == null ? null : nombre.trim();
     }
 
     public String getDescripcion() {
@@ -45,7 +55,7 @@ public class ProductoRequest {
     }
 
     public void setDescripcion(String descripcion) {
-        this.descripcion = descripcion;
+        this.descripcion = descripcion == null ? null : descripcion.trim();
     }
 
     public Double getPrecio() {
@@ -69,7 +79,7 @@ public class ProductoRequest {
     }
 
     public void setCategoriaId(String categoriaId) {
-        this.categoriaId = categoriaId;
+        this.categoriaId = categoriaId == null ? null : categoriaId.trim();
     }
 
     public Integer getImagenRecurso() {

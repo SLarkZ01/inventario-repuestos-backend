@@ -5,6 +5,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.bson.types.ObjectId;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import com.repobackend.api.dto.ProductoRequest;
@@ -15,15 +21,20 @@ import com.repobackend.api.repository.ProductoRepository;
 @Service
 public class ProductoService {
     private final ProductoRepository productoRepository;
+    private final MongoTemplate mongoTemplate;
 
-    public ProductoService(ProductoRepository productoRepository) {
+    public ProductoService(ProductoRepository productoRepository, MongoTemplate mongoTemplate) {
         this.productoRepository = productoRepository;
+        this.mongoTemplate = mongoTemplate;
     }
 
     @SuppressWarnings("unchecked")
     public Map<String, Object> crearProducto(Map<String, Object> body) {
         Producto p = new Producto();
         p.setIdString((String) body.get("id"));
+        if (p.getIdString() == null || p.getIdString().isBlank()) {
+            p.setIdString(new ObjectId().toHexString());
+        }
         p.setNombre((String) body.get("nombre"));
         p.setDescripcion((String) body.getOrDefault("descripcion", null));
         Number precioN = (Number) body.getOrDefault("precio", null);
@@ -43,6 +54,9 @@ public class ProductoService {
     // DTO-based creation
     public Map<String, Object> crearProducto(ProductoRequest req) {
         Producto p = toEntity(req);
+        if (p.getIdString() == null || p.getIdString().isBlank()) {
+            p.setIdString(new ObjectId().toHexString());
+        }
         p.setCreadoEn(new Date());
         Producto saved = productoRepository.save(p);
         return Map.of("producto", toResponse(saved));
@@ -146,6 +160,18 @@ public class ProductoService {
         p.setStock(Math.max(0, current + delta));
         Producto saved = productoRepository.save(p);
         return Map.of("producto", saved);
+    }
+
+    /**
+     * Intenta decrementar stock de forma condicional y atómica.
+     * Retorna el Producto actualizado si se pudo decrementar, o null si no había suficiente stock.
+     */
+    public Producto decreaseStockIfAvailable(String productoId, int qty) {
+        if (qty <= 0) throw new IllegalArgumentException("qty debe ser > 0");
+        Query q = Query.query(Criteria.where("_id").is(productoId).and("stock").gte(qty));
+        Update u = new Update().inc("stock", -qty);
+        Producto updated = mongoTemplate.findAndModify(q, u, FindAndModifyOptions.options().returnNew(true), Producto.class);
+        return updated;
     }
 
     public Map<String, Object> eliminarProducto(String id) {

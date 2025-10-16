@@ -48,6 +48,22 @@ public class FacturaController {
         }
     }
 
+    @PostMapping(path = "/checkout", consumes = "application/json")
+    public ResponseEntity<?> checkout(@RequestBody Map<String, Object> body) {
+        try {
+            String carritoId = (String) body.get("carritoId");
+            String realizadoPor = (String) body.getOrDefault("realizadoPor", null);
+            var resp = facturaService.checkout(carritoId, realizadoPor);
+            return ResponseEntity.status(201).body(Map.of("factura", resp));
+        } catch (IllegalArgumentException iae) {
+            return ResponseEntity.status(400).body(Map.of("error", iae.getMessage()));
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.status(409).body(Map.of("error", ise.getMessage()));
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
+        }
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getFactura(@PathVariable String id) {
         var maybe = facturaService.getById(id);

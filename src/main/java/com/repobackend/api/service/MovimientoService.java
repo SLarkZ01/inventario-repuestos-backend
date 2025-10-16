@@ -176,6 +176,25 @@ public class MovimientoService {
         }
     }
 
+    /**
+     * Crea un movimiento en la colección sin tocar el stock (permite que el caller lo haga
+     * dentro de una misma transacción). Retorna el movimiento guardado.
+     */
+    public Movimiento crearMovimientoSinAjuste(String tipo, String productoId, int cantidad, String realizadoPorHex, String referencia, String notas) {
+        Movimiento m = new Movimiento();
+        m.setTipo(tipo);
+        m.setProductoId(productoId);
+        m.setCantidad(cantidad);
+        m.setReferencia(referencia);
+        m.setNotas(notas);
+        if (realizadoPorHex == null) m.setRealizadoPor(null);
+        else {
+            try { m.setRealizadoPor(new ObjectId(realizadoPorHex)); } catch (IllegalArgumentException iae) { m.setRealizadoPor(null); }
+        }
+        m.setCreadoEn(new Date());
+        return movimientoRepository.save(m);
+    }
+
     private MovimientoResponse toResponse(Movimiento m) {
         MovimientoResponse r = new MovimientoResponse();
         r.id = m.getId();
