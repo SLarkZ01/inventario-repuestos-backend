@@ -1,4 +1,4 @@
-package com.repobackend.api.service;
+package com.repobackend.api.auth.service;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -8,6 +8,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.io.IOException;
 
+import com.repobackend.api.service.OAuthException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 

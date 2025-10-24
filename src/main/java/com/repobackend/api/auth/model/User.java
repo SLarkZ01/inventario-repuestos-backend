@@ -1,4 +1,4 @@
-package com.repobackend.api.model;
+package com.repobackend.api.auth.model;
 
 import java.util.Date;
 import java.util.List;

@@ -1,4 +1,4 @@
-package com.repobackend.api.config;
+package com.repobackend.api.auth.config;
 
 public class SecurityConstants {
     // 15 minutes

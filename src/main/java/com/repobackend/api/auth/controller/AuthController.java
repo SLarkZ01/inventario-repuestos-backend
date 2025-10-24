@@ -1,4 +1,4 @@
-package com.repobackend.api.controller.auth;
+package com.repobackend.api.auth.controller;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.repobackend.api.dto.AuthRequests.LoginRequest;
-import com.repobackend.api.dto.AuthRequests.RegisterRequest;
-import com.repobackend.api.service.AuthService;
+import com.repobackend.api.auth.dto.AuthRequests.LoginRequest;
+import com.repobackend.api.auth.dto.AuthRequests.RegisterRequest;
+import com.repobackend.api.auth.service.AuthService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

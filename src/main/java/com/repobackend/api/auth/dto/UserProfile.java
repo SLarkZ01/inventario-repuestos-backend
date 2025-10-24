@@ -1,4 +1,4 @@
-package com.repobackend.api.dto;
+package com.repobackend.api.auth.dto;
 
 import java.util.Date;
 import java.util.List;

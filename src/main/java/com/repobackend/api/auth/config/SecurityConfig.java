@@ -1,4 +1,4 @@
-package com.repobackend.api.config;
+package com.repobackend.api.auth.config;
 
 import java.util.Arrays;
 import java.util.List;
@@ -20,9 +20,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import com.repobackend.api.security.CustomUserDetailsService;
-import com.repobackend.api.security.JwtAuthFilter;
-import com.repobackend.api.security.JwtUtil;
+import com.repobackend.api.auth.security.CustomUserDetailsService;
+import com.repobackend.api.auth.security.JwtAuthFilter;
+import com.repobackend.api.auth.security.JwtUtil;
 
 import jakarta.servlet.http.HttpServletResponse;
 

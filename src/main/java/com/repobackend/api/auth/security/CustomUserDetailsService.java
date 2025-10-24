@@ -1,4 +1,4 @@
-package com.repobackend.api.security;
+package com.repobackend.api.auth.security;
 
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -10,8 +10,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.repobackend.api.model.User;
-import com.repobackend.api.repository.UserRepository;
+import com.repobackend.api.auth.model.User;
+import com.repobackend.api.auth.repository.UserRepository;
 
 @Service
 public class CustomUserDetailsService implements UserDetailsService {

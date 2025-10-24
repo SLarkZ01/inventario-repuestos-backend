@@ -17,9 +17,9 @@ import com.repobackend.api.dto.FacturaResponse;
 import com.repobackend.api.model.ClienteEmbebido;
 import com.repobackend.api.model.Factura;
 import com.repobackend.api.model.FacturaItem;
-import com.repobackend.api.model.User;
+import com.repobackend.api.auth.model.User;
 import com.repobackend.api.repository.FacturaRepository;
-import com.repobackend.api.repository.UserRepository;
+import com.repobackend.api.auth.repository.UserRepository;
 
 @Service
 public class FacturaService {

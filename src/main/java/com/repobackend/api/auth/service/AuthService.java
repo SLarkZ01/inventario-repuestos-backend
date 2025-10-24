@@ -1,4 +1,4 @@
-package com.repobackend.api.service;
+package com.repobackend.api.auth.service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -7,6 +7,8 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 
+import com.repobackend.api.auth.config.SecurityConstants;
+import com.repobackend.api.auth.dto.UserProfile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -14,16 +16,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import com.repobackend.api.dto.AuthRequests.LoginRequest;
-import com.repobackend.api.dto.AuthRequests.RegisterRequest;
+import com.repobackend.api.auth.dto.AuthRequests.LoginRequest;
+import com.repobackend.api.auth.dto.AuthRequests.RegisterRequest;
 import com.repobackend.api.service.TallerService;
-import com.repobackend.api.service.OAuthService;
+
 import java.util.Map;
-import com.repobackend.api.model.RefreshToken;
-import com.repobackend.api.model.User;
-import com.repobackend.api.repository.RefreshTokenRepository;
-import com.repobackend.api.repository.UserRepository;
-import com.repobackend.api.security.JwtUtil;
+import com.repobackend.api.auth.model.RefreshToken;
+import com.repobackend.api.auth.model.User;
+import com.repobackend.api.auth.repository.RefreshTokenRepository;
+import com.repobackend.api.auth.repository.UserRepository;
+import com.repobackend.api.auth.security.JwtUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -74,14 +76,14 @@ public class AuthService {
             joined = tallerService.acceptInvitationByCode(u.getId(), req.inviteCode);
         }
         // generate tokens
-        String accessToken = jwtUtil.generateToken(u.getId(), com.repobackend.api.config.SecurityConstants.JWT_EXPIRATION_MS);
+        String accessToken = jwtUtil.generateToken(u.getId(), SecurityConstants.JWT_EXPIRATION_MS);
         String rawRefresh = java.util.UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
         String refreshHash = sha256(rawRefresh);
         RefreshToken rt = new RefreshToken();
         rt.setUserId(u.getId());
         rt.setTokenHash(refreshHash);
         rt.setIssuedAt(new Date());
-        rt.setExpiresAt(new Date(System.currentTimeMillis() + com.repobackend.api.config.SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
+        rt.setExpiresAt(new Date(System.currentTimeMillis() + SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
         refreshTokenRepository.save(rt);
         var resp = new java.util.HashMap<String, Object>();
         resp.put("accessToken", accessToken);
@@ -109,7 +111,7 @@ public class AuthService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
         }
         // Generate JWT access token and a random refresh token
-        String accessToken = jwtUtil.generateToken(u.getId(), com.repobackend.api.config.SecurityConstants.JWT_EXPIRATION_MS);
+        String accessToken = jwtUtil.generateToken(u.getId(), SecurityConstants.JWT_EXPIRATION_MS);
         String rawRefresh = java.util.UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
 
         String refreshHash = sha256(rawRefresh);
@@ -117,7 +119,7 @@ public class AuthService {
         rt.setUserId(u.getId());
         rt.setTokenHash(refreshHash);
         rt.setIssuedAt(new Date());
-        rt.setExpiresAt(new Date(System.currentTimeMillis() + com.repobackend.api.config.SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
+        rt.setExpiresAt(new Date(System.currentTimeMillis() + SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
         rt.setDeviceInfo(req.device);
         refreshTokenRepository.save(rt);
 
@@ -152,7 +154,7 @@ public class AuthService {
             logger.warn("Refresh token expired or revoked for userId={}", rt.getUserId());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token expired or revoked");
         }
-        String newAccess = jwtUtil.generateToken(rt.getUserId(), com.repobackend.api.config.SecurityConstants.JWT_EXPIRATION_MS);
+        String newAccess = jwtUtil.generateToken(rt.getUserId(), SecurityConstants.JWT_EXPIRATION_MS);
         return ResponseEntity.ok(new java.util.HashMap<String, Object>() {{ put("accessToken", newAccess); }});
     }
 
@@ -200,7 +202,7 @@ public class AuthService {
         java.util.Optional<User> maybe = userRepository.findById(userId);
         if (maybe.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         User u = maybe.get();
-        com.repobackend.api.dto.UserProfile profile = new com.repobackend.api.dto.UserProfile();
+        UserProfile profile = new UserProfile();
         profile.id = u.getId();
         profile.username = u.getUsername();
         profile.email = u.getEmail();
@@ -225,7 +227,7 @@ public class AuthService {
         if (maybe.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         User u = maybe.get();
         // Map to UserProfile DTO to avoid leaking sensitive fields
-        com.repobackend.api.dto.UserProfile profile = new com.repobackend.api.dto.UserProfile();
+        UserProfile profile = new UserProfile();
         profile.id = u.getId();
         profile.username = u.getUsername();
         profile.email = u.getEmail();
@@ -331,14 +333,14 @@ public class AuthService {
         if (inviteCode != null && !inviteCode.isBlank()) {
             joined = tallerService.acceptInvitationByCode(u.getId(), inviteCode);
         }
-        String accessToken = jwtUtil.generateToken(u.getId(), com.repobackend.api.config.SecurityConstants.JWT_EXPIRATION_MS);
+        String accessToken = jwtUtil.generateToken(u.getId(), SecurityConstants.JWT_EXPIRATION_MS);
         String rawRefresh = java.util.UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
         String refreshHash = sha256(rawRefresh);
         RefreshToken rt = new RefreshToken();
         rt.setUserId(u.getId());
         rt.setTokenHash(refreshHash);
         rt.setIssuedAt(new Date());
-        rt.setExpiresAt(new Date(System.currentTimeMillis() + com.repobackend.api.config.SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
+        rt.setExpiresAt(new Date(System.currentTimeMillis() + SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
         rt.setDeviceInfo(device);
         refreshTokenRepository.save(rt);
         var resp = new java.util.HashMap<String, Object>();
@@ -396,14 +398,14 @@ public class AuthService {
         if (inviteCode != null && !inviteCode.isBlank()) {
             joined = tallerService.acceptInvitationByCode(u.getId(), inviteCode);
         }
-        String accessToken = jwtUtil.generateToken(u.getId(), com.repobackend.api.config.SecurityConstants.JWT_EXPIRATION_MS);
+        String accessToken = jwtUtil.generateToken(u.getId(), SecurityConstants.JWT_EXPIRATION_MS);
         String rawRefresh = java.util.UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
         String refreshHash = sha256(rawRefresh);
         RefreshToken rt = new RefreshToken();
         rt.setUserId(u.getId());
         rt.setTokenHash(refreshHash);
         rt.setIssuedAt(new Date());
-        rt.setExpiresAt(new Date(System.currentTimeMillis() + com.repobackend.api.config.SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
+        rt.setExpiresAt(new Date(System.currentTimeMillis() + SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
         rt.setDeviceInfo(device);
         refreshTokenRepository.save(rt);
         var resp = new java.util.HashMap<String, Object>();

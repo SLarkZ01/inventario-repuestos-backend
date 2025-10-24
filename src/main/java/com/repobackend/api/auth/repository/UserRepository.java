@@ -1,10 +1,10 @@
-package com.repobackend.api.repository;
+package com.repobackend.api.auth.repository;
 
 import java.util.Optional;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import com.repobackend.api.model.User;
+import com.repobackend.api.auth.model.User;
 
 public interface UserRepository extends MongoRepository<User, String> {
 

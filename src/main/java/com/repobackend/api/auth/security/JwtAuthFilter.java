@@ -1,4 +1,4 @@
-package com.repobackend.api.security;
+package com.repobackend.api.auth.security;
 
 import java.io.IOException;
 
