@@ -56,7 +56,7 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.POST, "/api/auth/oauth/google", "/api/auth/oauth/facebook").permitAll()
         // Secure these auth endpoints
         .requestMatchers("/api/auth/me", "/api/auth/revoke-all").authenticated()
-        // everything else requires authentication
+        // everything else requires authenticationk
         .anyRequest().authenticated()
     );
 
