@@ -1,4 +1,4 @@
-package com.repobackend.api.service;
+package com.repobackend.api.carrito.service;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -12,13 +12,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.repobackend.api.dto.CarritoItemRequest;
-import com.repobackend.api.dto.CarritoItemResponse;
-import com.repobackend.api.dto.CarritoRequest;
-import com.repobackend.api.dto.CarritoResponse;
-import com.repobackend.api.model.Carrito;
-import com.repobackend.api.model.CarritoItem;
-import com.repobackend.api.repository.CarritoRepository;
+import com.repobackend.api.carrito.dto.CarritoItemRequest;
+import com.repobackend.api.carrito.dto.CarritoItemResponse;
+import com.repobackend.api.carrito.dto.CarritoRequest;
+import com.repobackend.api.carrito.dto.CarritoResponse;
+import com.repobackend.api.carrito.model.Carrito;
+import com.repobackend.api.carrito.model.CarritoItem;
+import com.repobackend.api.carrito.repository.CarritoRepository;
 
 @Service
 public class CarritoService {

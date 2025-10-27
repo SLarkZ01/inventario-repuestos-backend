@@ -1,4 +1,4 @@
-package com.repobackend.api.service;
+package com.repobackend.api.movimiento.service;
 
 import java.util.Date;
 import java.util.List;
@@ -13,10 +13,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import com.repobackend.api.dto.MovimientoRequest;
-import com.repobackend.api.dto.MovimientoResponse;
-import com.repobackend.api.model.Movimiento;
-import com.repobackend.api.repository.MovimientoRepository;
+import com.repobackend.api.movimiento.dto.MovimientoRequest;
+import com.repobackend.api.movimiento.dto.MovimientoResponse;
+import com.repobackend.api.movimiento.model.Movimiento;
+import com.repobackend.api.movimiento.repository.MovimientoRepository;
 
 @Service
 public class MovimientoService {

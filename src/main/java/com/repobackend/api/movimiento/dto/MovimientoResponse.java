@@ -1,4 +1,4 @@
-package com.repobackend.api.dto;
+package com.repobackend.api.movimiento.dto;
 
 import java.util.Date;
 

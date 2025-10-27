@@ -1,4 +1,4 @@
-package com.repobackend.api.dto;
+package com.repobackend.api.factura.dto;
 
 public class FacturaItemResponse {
     private String productoId;

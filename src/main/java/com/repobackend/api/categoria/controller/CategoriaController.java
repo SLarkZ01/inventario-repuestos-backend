@@ -1,4 +1,4 @@
-package com.repobackend.api.controller;
+package com.repobackend.api.categoria.controller;
 
 import java.util.List;
 import java.util.Map;
@@ -14,9 +14,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.repobackend.api.dto.CategoriaRequest;
-import com.repobackend.api.model.Categoria;
-import com.repobackend.api.service.CategoriaService;
+import com.repobackend.api.categoria.dto.CategoriaRequest;
+import com.repobackend.api.categoria.model.Categoria;
+import com.repobackend.api.categoria.service.CategoriaService;
 
 import jakarta.servlet.http.HttpServletRequest;
 

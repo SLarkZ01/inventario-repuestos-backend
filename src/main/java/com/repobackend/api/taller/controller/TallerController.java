@@ -1,4 +1,4 @@
-package com.repobackend.api.controller;
+package com.repobackend.api.taller.controller;
 
 import java.util.Map;
 
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.repobackend.api.service.TallerService;
+import com.repobackend.api.taller.service.TallerService;
 
 import jakarta.servlet.http.HttpServletRequest;
 

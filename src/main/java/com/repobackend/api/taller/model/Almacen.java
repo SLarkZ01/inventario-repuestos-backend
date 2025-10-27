@@ -1,4 +1,4 @@
-package com.repobackend.api.model;
+package com.repobackend.api.taller.model;
 
 import java.util.Date;
 

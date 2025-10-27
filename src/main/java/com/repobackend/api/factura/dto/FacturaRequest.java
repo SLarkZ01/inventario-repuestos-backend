@@ -1,7 +1,8 @@
-package com.repobackend.api.dto;
+package com.repobackend.api.factura.dto;
 
 import java.util.List;
 
+import com.repobackend.api.cliente.dto.ClienteRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 

@@ -1,4 +1,4 @@
-package com.repobackend.api.model;
+package com.repobackend.api.carrito.model;
 
 public class CarritoItem {
     private String productoId;

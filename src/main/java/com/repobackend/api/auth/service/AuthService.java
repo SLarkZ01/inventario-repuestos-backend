@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import com.repobackend.api.auth.config.SecurityConstants;
 import com.repobackend.api.auth.dto.UserProfile;
+import com.repobackend.api.auth.exception.OAuthException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -18,7 +19,7 @@ import org.springframework.stereotype.Service;
 
 import com.repobackend.api.auth.dto.AuthRequests.LoginRequest;
 import com.repobackend.api.auth.dto.AuthRequests.RegisterRequest;
-import com.repobackend.api.service.TallerService;
+import com.repobackend.api.taller.service.TallerService;
 
 import java.util.Map;
 import com.repobackend.api.auth.model.RefreshToken;
@@ -243,7 +244,7 @@ public class AuthService {
         Map<String, Object> info;
         try {
             info = oauthService.verifyGoogleToken(idToken);
-        } catch (com.repobackend.api.service.OAuthException oex) {
+        } catch (OAuthException oex) {
             return ResponseEntity.status(oex.getStatusCode() == 0 ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(oex.getStatusCode())).body(oex.getMessage());
         }
         if (info == null || info.get("email") == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token Google inválido");
@@ -355,7 +356,7 @@ public class AuthService {
         Map<String, Object> info;
         try {
             info = oauthService.verifyFacebookToken(accessTokenFb);
-        } catch (com.repobackend.api.service.OAuthException oex) {
+        } catch (OAuthException oex) {
             return ResponseEntity.status(oex.getStatusCode() == 0 ? HttpStatus.BAD_GATEWAY : HttpStatus.valueOf(oex.getStatusCode())).body(oex.getMessage());
         }
         if (info == null || info.get("email") == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Token Facebook inválido");

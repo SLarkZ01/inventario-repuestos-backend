@@ -1,4 +1,4 @@
-package com.repobackend.api.controller;
+package com.repobackend.api.producto.controller;
 
 import java.util.List;
 import java.util.Map;
@@ -15,9 +15,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.repobackend.api.dto.ProductoRequest;
-import com.repobackend.api.model.Producto;
-import com.repobackend.api.service.ProductoService;
+import com.repobackend.api.producto.dto.ProductoRequest;
+import com.repobackend.api.producto.model.Producto;
+import com.repobackend.api.producto.service.ProductoService;
 
 import jakarta.servlet.http.HttpServletRequest;
 

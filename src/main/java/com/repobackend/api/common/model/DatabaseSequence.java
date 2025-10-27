@@ -1,4 +1,4 @@
-package com.repobackend.api.model;
+package com.repobackend.api.common.model;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;

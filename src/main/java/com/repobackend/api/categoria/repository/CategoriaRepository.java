@@ -1,10 +1,10 @@
-package com.repobackend.api.repository;
+package com.repobackend.api.categoria.repository;
 
 import java.util.List;
 
 import org.springframework.data.mongodb.repository.MongoRepository;
 
-import com.repobackend.api.model.Categoria;
+import com.repobackend.api.categoria.model.Categoria;
 
 public interface CategoriaRepository extends MongoRepository<Categoria, String> {
     Categoria findByIdString(String idString);

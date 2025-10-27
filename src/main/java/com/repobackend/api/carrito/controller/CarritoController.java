@@ -1,4 +1,4 @@
-package com.repobackend.api.controller;
+package com.repobackend.api.carrito.controller;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.repobackend.api.dto.CarritoItemRequest;
-import com.repobackend.api.dto.CarritoRequest;
-import com.repobackend.api.dto.CarritoResponse;
-import com.repobackend.api.service.CarritoService;
+import com.repobackend.api.carrito.dto.CarritoItemRequest;
+import com.repobackend.api.carrito.dto.CarritoRequest;
+import com.repobackend.api.carrito.dto.CarritoResponse;
+import com.repobackend.api.carrito.service.CarritoService;
 
 import jakarta.validation.Valid;
 

@@ -1,4 +1,4 @@
-package com.repobackend.api.dto;
+package com.repobackend.api.factura.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;

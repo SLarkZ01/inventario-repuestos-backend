@@ -1,4 +1,4 @@
-package com.repobackend.api.service;
+package com.repobackend.api.categoria.service;
 
 import java.util.Date;
 import java.util.List;
@@ -7,10 +7,10 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
-import com.repobackend.api.dto.CategoriaRequest;
-import com.repobackend.api.dto.CategoriaResponse;
-import com.repobackend.api.model.Categoria;
-import com.repobackend.api.repository.CategoriaRepository;
+import com.repobackend.api.categoria.dto.CategoriaRequest;
+import com.repobackend.api.categoria.dto.CategoriaResponse;
+import com.repobackend.api.categoria.model.Categoria;
+import com.repobackend.api.categoria.repository.CategoriaRepository;
 
 @Service
 public class CategoriaService {

@@ -1,4 +1,4 @@
-package com.repobackend.api.controller;
+package com.repobackend.api.movimiento.controller;
 
 import java.util.List;
 import java.util.Map;
@@ -13,10 +13,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.repobackend.api.dto.MovimientoRequest;
-import com.repobackend.api.dto.MovimientoResponse;
-import com.repobackend.api.model.Movimiento;
-import com.repobackend.api.service.MovimientoService;
+import com.repobackend.api.movimiento.dto.MovimientoRequest;
+import com.repobackend.api.movimiento.dto.MovimientoResponse;
+import com.repobackend.api.movimiento.model.Movimiento;
+import com.repobackend.api.movimiento.service.MovimientoService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

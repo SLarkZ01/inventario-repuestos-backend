@@ -1,4 +1,4 @@
-package com.repobackend.api.model;
+package com.repobackend.api.cliente.model;
 
 public class ClienteEmbebido {
     private String nombre;

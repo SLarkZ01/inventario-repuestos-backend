@@ -1,4 +1,4 @@
-package com.repobackend.api.model;
+package com.repobackend.api.factura.model;
 
 public class FacturaItem {
     private String productoId;

@@ -1,4 +1,4 @@
-package com.repobackend.api.model;
+package com.repobackend.api.movimiento.model;
 
 import java.util.Date;
 

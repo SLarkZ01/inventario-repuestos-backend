@@ -1,4 +1,4 @@
-package com.repobackend.api.service;
+package com.repobackend.api.common.service;
 
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -7,7 +7,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
-import com.repobackend.api.model.DatabaseSequence;
+import com.repobackend.api.common.model.DatabaseSequence;
 
 @Service
 public class SequenceGeneratorService {

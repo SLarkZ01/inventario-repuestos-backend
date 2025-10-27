@@ -1,4 +1,4 @@
-package com.repobackend.api.service;
+package com.repobackend.api.producto.service;
 
 import java.util.Date;
 import java.util.List;
@@ -13,10 +13,10 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
-import com.repobackend.api.dto.ProductoRequest;
-import com.repobackend.api.dto.ProductoResponse;
-import com.repobackend.api.model.Producto;
-import com.repobackend.api.repository.ProductoRepository;
+import com.repobackend.api.producto.dto.ProductoRequest;
+import com.repobackend.api.producto.dto.ProductoResponse;
+import com.repobackend.api.producto.model.Producto;
+import com.repobackend.api.producto.repository.ProductoRepository;
 
 @Service
 public class ProductoService {

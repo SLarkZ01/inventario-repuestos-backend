@@ -1,4 +1,4 @@
-package com.repobackend.api.dto;
+package com.repobackend.api.cliente.dto;
 
 public class ClienteRequest {
     private String nombre;

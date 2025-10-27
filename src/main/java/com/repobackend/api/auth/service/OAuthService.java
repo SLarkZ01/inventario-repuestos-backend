@@ -8,7 +8,7 @@ import java.time.Duration;
 import java.util.Map;
 import java.io.IOException;
 
-import com.repobackend.api.service.OAuthException;
+import com.repobackend.api.auth.exception.OAuthException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 

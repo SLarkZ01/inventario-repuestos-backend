@@ -1,24 +1,28 @@
-package com.repobackend.api.service;
+package com.repobackend.api.factura.service;
 
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.repobackend.api.carrito.service.CarritoService;
+import com.repobackend.api.movimiento.service.MovimientoService;
+import com.repobackend.api.producto.service.ProductoService;
+import com.repobackend.api.common.service.SequenceGeneratorService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.repobackend.api.dto.ClienteResponse;
-import com.repobackend.api.dto.FacturaItemResponse;
-import com.repobackend.api.dto.FacturaRequest;
-import com.repobackend.api.dto.FacturaResponse;
-import com.repobackend.api.model.ClienteEmbebido;
-import com.repobackend.api.model.Factura;
-import com.repobackend.api.model.FacturaItem;
+import com.repobackend.api.cliente.dto.ClienteResponse;
+import com.repobackend.api.factura.dto.FacturaItemResponse;
+import com.repobackend.api.factura.dto.FacturaRequest;
+import com.repobackend.api.factura.dto.FacturaResponse;
+import com.repobackend.api.cliente.model.ClienteEmbebido;
+import com.repobackend.api.factura.model.Factura;
+import com.repobackend.api.factura.model.FacturaItem;
 import com.repobackend.api.auth.model.User;
-import com.repobackend.api.repository.FacturaRepository;
+import com.repobackend.api.factura.repository.FacturaRepository;
 import com.repobackend.api.auth.repository.UserRepository;
 
 @Service

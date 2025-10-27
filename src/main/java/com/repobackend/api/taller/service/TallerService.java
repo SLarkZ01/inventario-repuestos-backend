@@ -1,4 +1,4 @@
-package com.repobackend.api.service;
+package com.repobackend.api.taller.service;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -11,12 +11,12 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import com.repobackend.api.model.Almacen;
-import com.repobackend.api.model.Invitation;
-import com.repobackend.api.model.Taller;
-import com.repobackend.api.repository.AlmacenRepository;
-import com.repobackend.api.repository.InvitationRepository;
-import com.repobackend.api.repository.TallerRepository;
+import com.repobackend.api.taller.model.Almacen;
+import com.repobackend.api.taller.model.Invitation;
+import com.repobackend.api.taller.model.Taller;
+import com.repobackend.api.taller.repository.AlmacenRepository;
+import com.repobackend.api.taller.repository.InvitationRepository;
+import com.repobackend.api.taller.repository.TallerRepository;
 
 @Service
 public class TallerService {

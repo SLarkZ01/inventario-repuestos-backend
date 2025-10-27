@@ -1,8 +1,9 @@
-package com.repobackend.api.controller;
+package com.repobackend.api.factura.controller;
 
 import java.util.List;
 import java.util.Map;
 
+import com.repobackend.api.factura.dto.FacturaRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -12,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.repobackend.api.model.Factura;
-import com.repobackend.api.service.FacturaService;
+import com.repobackend.api.factura.model.Factura;
+import com.repobackend.api.factura.service.FacturaService;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -37,7 +38,7 @@ public class FacturaController {
 
     // New typed endpoint accepting DTO
     @PostMapping(path = "/dto", consumes = "application/json")
-    public ResponseEntity<?> crearFacturaDTO(@Valid @RequestBody com.repobackend.api.dto.FacturaRequest facturaRequest) {
+    public ResponseEntity<?> crearFacturaDTO(@Valid @RequestBody FacturaRequest facturaRequest) {
         try {
             var resp = facturaService.crearFactura(facturaRequest);
             return ResponseEntity.status(201).body(Map.of("factura", resp));

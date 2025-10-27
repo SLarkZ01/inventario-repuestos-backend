@@ -1,4 +1,6 @@
-package com.repobackend.api.dto;
+package com.repobackend.api.factura.dto;
+
+import com.repobackend.api.cliente.dto.ClienteResponse;
 
 import java.util.Date;
 import java.util.List;

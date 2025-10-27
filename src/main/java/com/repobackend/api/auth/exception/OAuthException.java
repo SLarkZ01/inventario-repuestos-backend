@@ -1,4 +1,4 @@
-package com.repobackend.api.service;
+package com.repobackend.api.auth.exception;
 
 public class OAuthException extends Exception {
     private final int statusCode;
