@@ -34,6 +34,9 @@ public class ProductoRequest {
     @JsonAlias({"listaMedios", " listaMedios "})
     private List<java.util.Map<String, Object>> listaMedios;
 
+    // Especificaciones técnicas (clave -> valor) por ejemplo: {"Marca":"Yamaha", "Cilindraje":"150cc"}
+    private java.util.Map<String, String> specs;
+
     public String getIdString() {
         return idString;
     }
@@ -96,5 +99,13 @@ public class ProductoRequest {
 
     public void setListaMedios(List<java.util.Map<String, Object>> listaMedios) {
         this.listaMedios = listaMedios;
+    }
+
+    public java.util.Map<String, String> getSpecs() {
+        return specs;
+    }
+
+    public void setSpecs(java.util.Map<String, String> specs) {
+        this.specs = specs;
     }
 }

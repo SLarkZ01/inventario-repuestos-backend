@@ -54,8 +54,20 @@ public class SecurityConfig {
         // Public auth endpoints
         .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
         .requestMatchers(HttpMethod.POST, "/api/auth/oauth/google", "/api/auth/oauth/facebook").permitAll()
+        // Allow bootstrap creation of admin users (service will enforce adminKey if needed)
+        .requestMatchers(HttpMethod.POST, "/api/admin/users").permitAll()
+        // Public product/catalog endpoints: permitir vista sin autenticación
+        .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/**").permitAll()
+        // Permitir ver stock públicamente para que clientes no autenticados puedan ver disponibilidad/precio
+        .requestMatchers(HttpMethod.GET, "/api/stock").permitAll()
         // Secure these auth endpoints
         .requestMatchers("/api/auth/me", "/api/auth/revoke-all").authenticated()
+        // Admin-only endpoints (other admin routes)
+        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+        // Stock modifications: POST/PUT/DELETE requieren ADMIN o VENDEDOR
+        .requestMatchers(HttpMethod.POST, "/api/stock/**").hasAnyRole("ADMIN","VENDEDOR")
+        .requestMatchers(HttpMethod.PUT, "/api/stock/**").hasAnyRole("ADMIN","VENDEDOR")
+        .requestMatchers(HttpMethod.DELETE, "/api/stock/**").hasAnyRole("ADMIN","VENDEDOR")
         // everything else requires authentication
         .anyRequest().authenticated()
     );

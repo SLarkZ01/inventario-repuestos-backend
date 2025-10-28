@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 import com.repobackend.api.carrito.dto.CarritoItemRequest;
 import com.repobackend.api.carrito.dto.CarritoRequest;
@@ -42,7 +43,7 @@ public class CarritoController {
     @GetMapping
     public ResponseEntity<?> listarPorUsuario(@RequestParam(required = false) String usuarioId) {
         if (usuarioId == null) return ResponseEntity.ok(Map.of("carritos", java.util.List.of()));
-        var res = carritoService.listarPorUsuario(usuarioId).stream().map(c -> carritoService.toResponse(c)).collect(Collectors.toList());
+        var res = carritoService.listarPorUsuario(usuarioId).stream().map(carritoService::toResponse).collect(Collectors.toList());
         return ResponseEntity.ok(Map.of("carritos", res));
     }
 
@@ -54,28 +55,37 @@ public class CarritoController {
     }
 
     @PostMapping("/{id}/items")
-    public ResponseEntity<?> addItem(@PathVariable String id, @Valid @RequestBody CarritoItemRequest body) {
+    public ResponseEntity<?> addItem(@PathVariable String id, @Valid @RequestBody CarritoItemRequest body, Authentication authentication) {
+        String userId = authentication == null ? null : authentication.getName();
+        if (userId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
+        // Optionally enforce that carrito.usuarioId equals authenticated user, but here we simply require auth
         var r = carritoService.addItem(id, body);
         if (r.containsKey("error")) return ResponseEntity.status(404).body(r);
         return ResponseEntity.ok(r);
     }
 
     @DeleteMapping("/{id}/items/{productoId}")
-    public ResponseEntity<?> removeItem(@PathVariable String id, @PathVariable String productoId) {
+    public ResponseEntity<?> removeItem(@PathVariable String id, @PathVariable String productoId, Authentication authentication) {
+        String userId = authentication == null ? null : authentication.getName();
+        if (userId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
         var r = carritoService.removeItem(id, productoId);
         if (r.containsKey("error")) return ResponseEntity.status(404).body(r);
         return ResponseEntity.ok(r);
     }
 
     @PostMapping("/{id}/clear")
-    public ResponseEntity<?> clear(@PathVariable String id) {
+    public ResponseEntity<?> clear(@PathVariable String id, Authentication authentication) {
+        String userId = authentication == null ? null : authentication.getName();
+        if (userId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
         var r = carritoService.clear(id);
         if (r.containsKey("error")) return ResponseEntity.status(404).body(r);
         return ResponseEntity.ok(r);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> delete(@PathVariable String id) {
+    public ResponseEntity<?> delete(@PathVariable String id, Authentication authentication) {
+        String userId = authentication == null ? null : authentication.getName();
+        if (userId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
         var r = carritoService.delete(id);
         if (r.containsKey("error")) return ResponseEntity.status(404).body(r);
         return ResponseEntity.ok(r);

@@ -13,6 +13,14 @@ public class ProductoResponse {
     private String categoriaId;
     private Integer imagenRecurso;
     private List<java.util.Map<String, Object>> listaMedios;
+    // Especificaciones técnicas estructuradas
+    private java.util.Map<String, String> specs;
+    // thumbnailUrl: URL directa o publicId de la primera imagen para mostrar en listados
+    private String thumbnailUrl;
+    // Stock total (suma de almacenes)
+    private Integer totalStock;
+    // Desglose por almacén: lista de objetos { almacenId, cantidad }
+    private java.util.List<java.util.Map<String, Object>> stockByAlmacen;
     private Date creadoEn;
 
     public String getId() {
@@ -85,6 +93,38 @@ public class ProductoResponse {
 
     public void setListaMedios(List<java.util.Map<String, Object>> listaMedios) {
         this.listaMedios = listaMedios;
+    }
+
+    public java.util.Map<String, String> getSpecs() {
+        return specs;
+    }
+
+    public void setSpecs(java.util.Map<String, String> specs) {
+        this.specs = specs;
+    }
+
+    public String getThumbnailUrl() {
+        return thumbnailUrl;
+    }
+
+    public void setThumbnailUrl(String thumbnailUrl) {
+        this.thumbnailUrl = thumbnailUrl;
+    }
+
+    public Integer getTotalStock() {
+        return totalStock;
+    }
+
+    public void setTotalStock(Integer totalStock) {
+        this.totalStock = totalStock;
+    }
+
+    public java.util.List<java.util.Map<String, Object>> getStockByAlmacen() {
+        return stockByAlmacen;
+    }
+
+    public void setStockByAlmacen(java.util.List<java.util.Map<String, Object>> stockByAlmacen) {
+        this.stockByAlmacen = stockByAlmacen;
     }
 
     public Date getCreadoEn() {

@@ -10,6 +10,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 import com.repobackend.api.taller.model.Almacen;
 import com.repobackend.api.taller.model.Invitation;
@@ -144,5 +146,102 @@ public class TallerService {
         inv.setRedeemedByUserId(userId);
         invitationRepository.save(inv);
         return Map.of("taller", t);
+    }
+
+    /**
+     * Promueve a un miembro de un taller a rol ADMIN.
+     * Solo el owner del taller o un miembro con rol ADMIN puede promover.
+     */
+    public Map<String, Object> promoteMember(String callerId, String tallerId, String memberUserId) {
+        Optional<Taller> maybe = tallerRepository.findById(tallerId);
+        if (maybe.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Taller no encontrado");
+        Taller t = maybe.get();
+        @SuppressWarnings("unchecked")
+        boolean callerIsAdmin = t.getMiembros() != null && t.getMiembros().stream().anyMatch(m -> callerId.equals(String.valueOf(m.get("userId"))) && ((java.util.List<String>) m.get("roles")).contains("ADMIN"));
+        if (!callerIsAdmin && !t.getOwnerId().equals(callerId)) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Permisos insuficientes");
+
+        var miembros = t.getMiembros();
+        if (miembros == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Miembro no encontrado");
+        java.util.Map<String, Object> target = null;
+        for (var m : miembros) {
+            if (memberUserId.equals(String.valueOf(m.get("userId")))) { target = m; break; }
+        }
+        if (target == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Miembro no encontrado");
+        @SuppressWarnings("unchecked")
+        java.util.List<String> roles = (java.util.List<String>) target.get("roles");
+        if (roles == null) roles = new java.util.ArrayList<>();
+        if (!roles.contains("ADMIN")) roles.add("ADMIN");
+        target.put("roles", roles);
+        t.setMiembros(miembros);
+        tallerRepository.save(t);
+        return Map.of("taller", t);
+    }
+
+    /**
+     * Demueve a un miembro removiendo el rol ADMIN.
+     * No se puede demover al owner.
+     */
+    public Map<String, Object> demoteMember(String callerId, String tallerId, String memberUserId) {
+        Optional<Taller> maybe = tallerRepository.findById(tallerId);
+        if (maybe.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Taller no encontrado");
+        Taller t = maybe.get();
+        if (t.getOwnerId().equals(memberUserId)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se puede demover al owner del taller");
+        @SuppressWarnings("unchecked")
+        boolean callerIsAdmin = t.getMiembros() != null && t.getMiembros().stream().anyMatch(m -> callerId.equals(String.valueOf(m.get("userId"))) && ((java.util.List<String>) m.get("roles")).contains("ADMIN"));
+        if (!callerIsAdmin && !t.getOwnerId().equals(callerId)) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Permisos insuficientes");
+
+        var miembros = t.getMiembros();
+        if (miembros == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Miembro no encontrado");
+        java.util.Map<String, Object> target = null;
+        for (var m : miembros) {
+            if (memberUserId.equals(String.valueOf(m.get("userId")))) { target = m; break; }
+        }
+        if (target == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Miembro no encontrado");
+        @SuppressWarnings("unchecked")
+        java.util.List<String> roles = (java.util.List<String>) target.get("roles");
+        if (roles != null && roles.contains("ADMIN")) {
+            roles.removeIf(r -> r.equals("ADMIN"));
+            target.put("roles", roles);
+        }
+        t.setMiembros(miembros);
+        tallerRepository.save(t);
+        return Map.of("taller", t);
+    }
+
+    /**
+     * Remueve un miembro del taller. No se puede remover al owner.
+     */
+    public Map<String, Object> removeMember(String callerId, String tallerId, String memberUserId) {
+        Optional<Taller> maybe = tallerRepository.findById(tallerId);
+        if (maybe.isEmpty()) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Taller no encontrado");
+        Taller t = maybe.get();
+        if (t.getOwnerId().equals(memberUserId)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No se puede remover al owner del taller");
+        @SuppressWarnings("unchecked")
+        boolean callerIsAdmin = t.getMiembros() != null && t.getMiembros().stream().anyMatch(m -> callerId.equals(String.valueOf(m.get("userId"))) && ((java.util.List<String>) m.get("roles")).contains("ADMIN"));
+        if (!callerIsAdmin && !t.getOwnerId().equals(callerId)) throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Permisos insuficientes");
+
+        var miembros = t.getMiembros();
+        if (miembros == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Miembro no encontrado");
+        miembros.removeIf(m -> memberUserId.equals(String.valueOf(m.get("userId"))));
+        t.setMiembros(miembros);
+        tallerRepository.save(t);
+        return Map.of("taller", t);
+    }
+
+    // Nuevo helper: obtener almacen por id
+    public Optional<Almacen> findAlmacenById(String almacenId) {
+        return almacenRepository.findById(almacenId);
+    }
+
+    // Nuevo helper: verificar si un usuario es owner o miembro con alguno de los roles dados
+    @SuppressWarnings("unchecked")
+    public boolean isUserMemberWithAnyRole(String userId, String tallerId, java.util.List<String> allowedRoles) {
+        if (userId == null || tallerId == null) return false;
+        Optional<Taller> maybe = tallerRepository.findById(tallerId);
+        if (maybe.isEmpty()) return false;
+        Taller t = maybe.get();
+        if (t.getOwnerId() != null && t.getOwnerId().equals(userId)) return true;
+        if (t.getMiembros() == null) return false;
+        return t.getMiembros().stream().anyMatch(m -> userId.equals(String.valueOf(m.get("userId"))) && ((java.util.List<String>) m.get("roles")).stream().anyMatch(allowedRoles::contains));
     }
 }

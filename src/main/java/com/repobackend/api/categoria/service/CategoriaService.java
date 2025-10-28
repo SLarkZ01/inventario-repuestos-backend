@@ -72,6 +72,14 @@ public class CategoriaService {
         return categoriaRepository.findByNombreContainingIgnoreCase(q == null ? "" : q);
     }
 
+    public Map<String, Object> buscarPorNombrePaginado(String q, int page, int size) {
+        if (page < 0) page = 0;
+        if (size <= 0) size = 20;
+        org.springframework.data.domain.Pageable pg = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<Categoria> p = categoriaRepository.findByNombreContainingIgnoreCase(q == null ? "" : q, pg);
+        return Map.of("categorias", p.getContent(), "total", p.getTotalElements(), "page", page, "size", size);
+    }
+
     public Map<String, Object> actualizarCategoria(String id, Map<String, Object> body) {
         Optional<Categoria> maybe = categoriaRepository.findById(id);
         if (maybe.isEmpty()) return Map.of("error", "Categoria no encontrada");

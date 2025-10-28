@@ -17,15 +17,18 @@ import com.repobackend.api.producto.dto.ProductoRequest;
 import com.repobackend.api.producto.dto.ProductoResponse;
 import com.repobackend.api.producto.model.Producto;
 import com.repobackend.api.producto.repository.ProductoRepository;
+import com.repobackend.api.stock.service.StockService;
 
 @Service
 public class ProductoService {
     private final ProductoRepository productoRepository;
     private final MongoTemplate mongoTemplate;
+    private final StockService stockService;
 
-    public ProductoService(ProductoRepository productoRepository, MongoTemplate mongoTemplate) {
+    public ProductoService(ProductoRepository productoRepository, MongoTemplate mongoTemplate, StockService stockService) {
         this.productoRepository = productoRepository;
         this.mongoTemplate = mongoTemplate;
+        this.stockService = stockService;
     }
 
     @SuppressWarnings("unchecked")
@@ -73,6 +76,7 @@ public class ProductoService {
         p.setCategoriaId(req.getCategoriaId());
         p.setImagenRecurso(req.getImagenRecurso());
         p.setListaMedios(req.getListaMedios());
+        p.setSpecs(req.getSpecs());
         return p;
     }
 
@@ -87,8 +91,48 @@ public class ProductoService {
         r.setCategoriaId(p.getCategoriaId());
         r.setImagenRecurso(p.getImagenRecurso());
         r.setListaMedios(p.getListaMedios());
+        // copiar specs estructuradas
+        r.setSpecs(p.getSpecs());
+        // thumbnailUrl proviene de la primera imagen (puede ser url completa o publicId)
+        r.setThumbnailUrl(p.getThumbnailUrl());
+        // Rellenar stock total y desglose por almacén desde StockService
+        try {
+            int total = stockService.getTotalStock(p.getId());
+            r.setTotalStock(total);
+            var rows = stockService.getStockByProducto(p.getId());
+            java.util.List<java.util.Map<String, Object>> breakdown = new java.util.ArrayList<>();
+            for (var s : rows) {
+                breakdown.add(java.util.Map.of("almacenId", s.getAlmacenId(), "cantidad", s.getCantidad()));
+            }
+            r.setStockByAlmacen(breakdown);
+        } catch (Exception ex) {
+            // en caso de fallo al obtener stock, dejar campos nulos y no fallar la respuesta
+            r.setTotalStock(null);
+            r.setStockByAlmacen(null);
+        }
         r.setCreadoEn(p.getCreadoEn());
         return r;
+    }
+
+    // Listar con paginación simple: page (0-based) y size
+    public java.util.Map<String, Object> listar(int page, int size) {
+        if (page < 0) page = 0;
+        if (size <= 0) size = 20;
+        long total = productoRepository.count();
+        org.springframework.data.domain.Pageable pg = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<Producto> ppage = productoRepository.findAll(pg);
+        java.util.List<ProductoResponse> items = ppage.getContent().stream().map(this::toResponse).toList();
+        return Map.of("productos", items, "total", total, "page", page, "size", size);
+    }
+
+    // Listar por categoria con paginación
+    public java.util.Map<String, Object> listarPorCategoriaPaginado(String categoriaId, int page, int size) {
+        if (page < 0) page = 0;
+        if (size <= 0) size = 20;
+        org.springframework.data.domain.Pageable pg = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<Producto> ppage = productoRepository.findByCategoriaId(categoriaId, pg);
+        java.util.List<ProductoResponse> items = ppage.getContent().stream().map(this::toResponse).toList();
+        return Map.of("productos", items, "total", ppage.getTotalElements(), "page", page, "size", size);
     }
 
     public Optional<Producto> getById(String id) {
@@ -147,6 +191,7 @@ public class ProductoService {
         if (req.getCategoriaId() != null) p.setCategoriaId(req.getCategoriaId());
         if (req.getImagenRecurso() != null) p.setImagenRecurso(req.getImagenRecurso());
         if (req.getListaMedios() != null) p.setListaMedios(req.getListaMedios());
+        if (req.getSpecs() != null) p.setSpecs(req.getSpecs());
         Producto saved = productoRepository.save(p);
         return Map.of("producto", toResponse(saved));
     }
@@ -179,5 +224,27 @@ public class ProductoService {
         if (maybe.isEmpty()) return Map.of("error", "Producto no encontrado");
         productoRepository.deleteById(id);
         return Map.of("deleted", true);
+    }
+
+    // Listar por nombre con paginación
+    public java.util.Map<String, Object> productosPorNombrePaginado(String q, int page, int size) {
+        if (page < 0) page = 0;
+        if (size <= 0) size = 20;
+        org.springframework.data.domain.Pageable pg = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<Producto> ppage = productoRepository.findByNombreContainingIgnoreCase(q == null ? "" : q, pg);
+        java.util.List<ProductoResponse> items = ppage.getContent().stream().map(this::toResponse).toList();
+        return Map.of("productos", items, "total", ppage.getTotalElements(), "page", page, "size", size);
+    }
+
+    // Obtener varios productos por lista de ids y devolver un mapa id->ProductoResponse
+    public java.util.Map<String, ProductoResponse> findResponsesByIds(java.util.List<String> ids) {
+        if (ids == null || ids.isEmpty()) return java.util.Map.of();
+        java.util.List<Producto> list = productoRepository.findAllById(ids);
+        java.util.Map<String, ProductoResponse> map = new java.util.HashMap<>();
+        for (Producto p : list) {
+            ProductoResponse pr = toResponse(p);
+            map.put(p.getId(), pr);
+        }
+        return map;
     }
 }

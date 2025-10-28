@@ -16,8 +16,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.repobackend.api.factura.model.Factura;
 import com.repobackend.api.factura.service.FacturaService;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/facturas")
@@ -30,7 +30,7 @@ public class FacturaController {
 
     // Backwards compatible Map-based endpoint
     @PostMapping(consumes = "application/json")
-    public ResponseEntity<?> crearFactura(@RequestBody Map<String, Object> body, HttpServletRequest req) {
+    public ResponseEntity<?> crearFactura(@RequestBody Map<String, Object> body) {
         var r = facturaService.crearFactura(body);
         if (r.containsKey("error")) return ResponseEntity.badRequest().body(r);
         return ResponseEntity.status(201).body(r);
@@ -50,11 +50,12 @@ public class FacturaController {
     }
 
     @PostMapping(path = "/checkout", consumes = "application/json")
-    public ResponseEntity<?> checkout(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<?> checkout(@RequestBody Map<String, Object> body, Authentication authentication) {
+        String userId = authentication == null ? null : authentication.getName();
+        if (userId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
         try {
             String carritoId = (String) body.get("carritoId");
-            String realizadoPor = (String) body.getOrDefault("realizadoPor", null);
-            var resp = facturaService.checkout(carritoId, realizadoPor);
+            var resp = facturaService.checkout(carritoId, userId);
             return ResponseEntity.status(201).body(Map.of("factura", resp));
         } catch (IllegalArgumentException iae) {
             return ResponseEntity.status(400).body(Map.of("error", iae.getMessage()));
@@ -63,6 +64,7 @@ public class FacturaController {
         } catch (Exception ex) {
             return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
         }
+
     }
 
     @GetMapping("/{id}")
@@ -85,4 +87,5 @@ public class FacturaController {
         List<Factura> r = facturaService.listarPorUsuario(userId);
         return ResponseEntity.ok(Map.of("facturas", r));
     }
+
 }

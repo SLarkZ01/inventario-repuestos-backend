@@ -62,13 +62,9 @@ public class AuthService {
         u.setPassword(passwordEncoder.encode(req.password));
         u.setNombre(req.nombre);
         u.setApellido(req.apellido);
-        // If the user registers with an inviteCode, do NOT give global ADMIN role by default.
-        // If there's no inviteCode, default to ADMIN (user creates talleres).
-        if (req.inviteCode != null && !req.inviteCode.isBlank()) {
-            u.setRoles(Arrays.asList("USER"));
-        } else {
-            u.setRoles(Arrays.asList("ADMIN"));
-        }
+        // By default, a new registrant is a CLIENT (app customer). Invitations will link the user to a taller
+        // and add the corresponding taller member role (e.g. VENDEDOR). Never give ADMIN by default here.
+        u.setRoles(java.util.List.of("CLIENT"));
         u.setActivo(true);
         u.setFechaCreacion(new Date());
         userRepository.save(u);
@@ -78,7 +74,7 @@ public class AuthService {
         }
         // generate tokens
         String accessToken = jwtUtil.generateToken(u.getId(), SecurityConstants.JWT_EXPIRATION_MS);
-        String rawRefresh = java.util.UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
+        String rawRefresh = java.util.UUID.randomUUID() + "-" + System.currentTimeMillis();
         String refreshHash = sha256(rawRefresh);
         RefreshToken rt = new RefreshToken();
         rt.setUserId(u.getId());
@@ -113,7 +109,7 @@ public class AuthService {
         }
         // Generate JWT access token and a random refresh token
         String accessToken = jwtUtil.generateToken(u.getId(), SecurityConstants.JWT_EXPIRATION_MS);
-        String rawRefresh = java.util.UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
+        String rawRefresh = java.util.UUID.randomUUID() + "-" + System.currentTimeMillis();
 
         String refreshHash = sha256(rawRefresh);
         RefreshToken rt = new RefreshToken();
@@ -148,12 +144,12 @@ public class AuthService {
             String ip = request == null ? "-" : request.getRemoteAddr();
             String ua = request == null ? "-" : request.getHeader("User-Agent");
             logger.warn("Refresh attempt with invalid token hash ip={} ua={}", ip, ua);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("refresh token inválido");
         }
         RefreshToken rt = maybe.get();
         if (rt.isRevoked() || rt.getExpiresAt().before(new Date())) {
             logger.warn("Refresh token expired or revoked for userId={}", rt.getUserId());
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Refresh token expired or revoked");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("refresh token expirado o fue revocado");
         }
         String newAccess = jwtUtil.generateToken(rt.getUserId(), SecurityConstants.JWT_EXPIRATION_MS);
         return ResponseEntity.ok(new java.util.HashMap<String, Object>() {{ put("accessToken", newAccess); }});
@@ -178,7 +174,7 @@ public class AuthService {
         try {
             userId = jwtUtil.parseToken(token).getSubject();
         } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid access token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("acces token inválido");
         }
         java.util.List<RefreshToken> tokens = refreshTokenRepository.findByUserId(userId);
         for (RefreshToken rt : tokens) {
@@ -190,7 +186,7 @@ public class AuthService {
 
     // New helper: revoke all refresh tokens for a given userId (used when Authentication supplies userId)
     public ResponseEntity<?> revokeAllRefreshTokensForUser(String userId) {
-        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No tienes permisos para realizar esta acción");
         java.util.List<RefreshToken> tokens = refreshTokenRepository.findByUserId(userId);
         for (RefreshToken rt : tokens) rt.setRevoked(true);
         refreshTokenRepository.saveAll(tokens);
@@ -199,9 +195,9 @@ public class AuthService {
 
     // New helper: get current user by id (used when Authentication supplies userId)
     public ResponseEntity<?> getCurrentUserById(String userId) {
-        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        if (userId == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("No tienes permisos para realizar esta acción");
         java.util.Optional<User> maybe = userRepository.findById(userId);
-        if (maybe.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        if (maybe.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
         User u = maybe.get();
         UserProfile profile = new UserProfile();
         profile.id = u.getId();
@@ -222,10 +218,10 @@ public class AuthService {
         try {
             userId = jwtUtil.parseToken(token).getSubject();
         } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid access token");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Access token inválido");
         }
         Optional<User> maybe = userRepository.findById(userId);
-        if (maybe.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+        if (maybe.isEmpty()) return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Usuario no encontrado");
         User u = maybe.get();
         // Map to UserProfile DTO to avoid leaking sensitive fields
         UserProfile profile = new UserProfile();
@@ -320,7 +316,8 @@ public class AuthService {
             u.setNombre(first);
             u.setApellido(last);
             u.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
-            if (inviteCode != null && !inviteCode.isBlank()) u.setRoles(Arrays.asList("USER")); else u.setRoles(Arrays.asList("ADMIN"));
+            // Default role for OAuth-registered users is CLIENT; invitations will join them to a taller.
+            u.setRoles(java.util.List.of("CLIENT"));
             // set provider info from Google token
             if (sub != null) {
                 u.setProvider("google");
@@ -335,7 +332,7 @@ public class AuthService {
             joined = tallerService.acceptInvitationByCode(u.getId(), inviteCode);
         }
         String accessToken = jwtUtil.generateToken(u.getId(), SecurityConstants.JWT_EXPIRATION_MS);
-        String rawRefresh = java.util.UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
+        String rawRefresh = java.util.UUID.randomUUID() + "-" + System.currentTimeMillis();
         String refreshHash = sha256(rawRefresh);
         RefreshToken rt = new RefreshToken();
         rt.setUserId(u.getId());
@@ -385,7 +382,7 @@ public class AuthService {
             u.setEmail(email);
             u.setNombre(name);
             u.setPassword(passwordEncoder.encode(java.util.UUID.randomUUID().toString()));
-            if (inviteCode != null && !inviteCode.isBlank()) u.setRoles(Arrays.asList("USER")); else u.setRoles(Arrays.asList("ADMIN"));
+            u.setRoles(java.util.List.of("CLIENT"));
             // set provider info from Facebook response
             if (fbId != null) {
                 u.setProvider("facebook");
@@ -400,7 +397,7 @@ public class AuthService {
             joined = tallerService.acceptInvitationByCode(u.getId(), inviteCode);
         }
         String accessToken = jwtUtil.generateToken(u.getId(), SecurityConstants.JWT_EXPIRATION_MS);
-        String rawRefresh = java.util.UUID.randomUUID().toString() + "-" + System.currentTimeMillis();
+        String rawRefresh = java.util.UUID.randomUUID() + "-" + System.currentTimeMillis();
         String refreshHash = sha256(rawRefresh);
         RefreshToken rt = new RefreshToken();
         rt.setUserId(u.getId());

@@ -37,10 +37,12 @@ public class CategoriaController {
     }
 
     @GetMapping
-    public ResponseEntity<?> listar(@RequestParam(required = false) String q) {
+    public ResponseEntity<?> listar(@RequestParam(required = false) String q,
+                                    @RequestParam(required = false, defaultValue = "0") int page,
+                                    @RequestParam(required = false, defaultValue = "20") int size) {
         if (q != null && !q.isBlank()) {
-            List<Categoria> res = categoriaService.buscarPorNombre(q);
-            return ResponseEntity.ok(Map.of("categorias", res));
+            var res = categoriaService.buscarPorNombrePaginado(q, page, size);
+            return ResponseEntity.ok(res);
         }
         return ResponseEntity.ok(Map.of("categorias", List.of()));
     }

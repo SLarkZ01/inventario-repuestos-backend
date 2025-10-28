@@ -38,17 +38,21 @@ public class ProductoController {
     }
 
     @GetMapping
-    public ResponseEntity<?> listar(@RequestParam(required = false) String categoriaId, @RequestParam(required = false) String q) {
+    public ResponseEntity<?> listar(@RequestParam(required = false) String categoriaId, @RequestParam(required = false) String q,
+                                    @RequestParam(required = false, defaultValue = "0") int page,
+                                    @RequestParam(required = false, defaultValue = "20") int size) {
         if (q != null && !q.isBlank()) {
-            List<Producto> res = productoService.buscarPorNombre(q);
-            return ResponseEntity.ok(Map.of("productos", res));
+            // usar paginación en búsqueda
+            var pg = productoService.productosPorNombrePaginado(q, page, size);
+            return ResponseEntity.ok(pg);
         }
         if (categoriaId != null) {
-            List<Producto> res = productoService.listarPorCategoria(categoriaId);
-            return ResponseEntity.ok(Map.of("productos", res));
+            var pg = productoService.listarPorCategoriaPaginado(categoriaId, page, size);
+            return ResponseEntity.ok(pg);
         }
-        // fallback: return empty list (could implement full listing but avoid large result sets)
-        return ResponseEntity.ok(Map.of("productos", List.of()));
+        // fallback: paginated list
+        var pg = productoService.listar(page, size);
+        return ResponseEntity.ok(pg);
     }
 
     @GetMapping("/{id}")

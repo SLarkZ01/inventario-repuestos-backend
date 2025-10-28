@@ -15,10 +15,18 @@ import org.springframework.validation.BindException;
 import jakarta.validation.ConstraintViolationException;
 
 import com.repobackend.api.auth.exception.OAuthException;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
     private static final Logger logger = LoggerFactory.getLogger(ApiExceptionHandler.class);
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<?> handleResponseStatusException(ResponseStatusException ex) {
+        int code = ex.getStatusCode() == null ? HttpStatus.INTERNAL_SERVER_ERROR.value() : ex.getStatusCode().value();
+        String msg = ex.getReason() == null ? ex.getMessage() : ex.getReason();
+        return ResponseEntity.status(code).body(Map.of("error", msg));
+    }
 
     @ExceptionHandler(OAuthException.class)
     public ResponseEntity<?> handleOAuthException(OAuthException ex) {

@@ -3,15 +3,16 @@ package com.repobackend.api.carrito.dto;
 import java.util.List;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 
+/**
+ * DTO para crear/actualizar un carrito.
+ * - `usuarioId` es opcional: si se omite se crea un carrito anónimo que el cliente puede sincronizar tras login.
+ * - `items` es opcional (permitimos crear carrito vacío o con items).
+ */
 public class CarritoRequest {
-    @NotBlank
-    private String usuarioId; // hex string of ObjectId
+    private String usuarioId; // hex string of ObjectId (opcional)
 
     @Valid
-    @NotEmpty
     private List<CarritoItemRequest> items;
 
     private String realizadoPor; // optional hex string
