@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.5</version>
+        <version>3.3.5</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.repobackend</groupId>
@@ -92,14 +92,41 @@
             <scope>test</scope>
         </dependency>
 
-        <!-- Agregado: Springdoc starter para Spring Boot 3 (expone /v3/api-docs y UI) -->
+        <!-- Springdoc OpenAPI starter para Spring Boot 3 (expone /v3/api-docs y UI) -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.1.0</version>
+            <version>2.5.0</version>
+        </dependency>
+
+        <!-- jackson-dataformat-yaml para el controlador estático OpenApiStaticController -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
 
     </dependencies>
+
+    <!-- Forzar versiones de swagger-core compatibles con Spring Boot 3.3.x -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-core-jakarta</artifactId>
+                <version>2.2.15</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-annotations-jakarta</artifactId>
+                <version>2.2.15</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger.core.v3</groupId>
+                <artifactId>swagger-models-jakarta</artifactId>
+                <version>2.2.15</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
@@ -128,8 +155,9 @@
                 </configuration>
             </plugin>
 
-            <!-- Removed: springdoc-openapi-maven-plugin caused plugin resolution failures on CI/local -->
-
+            <!-- Plugin de generación de clientes OpenAPI comentado temporalmente -->
+            <!-- Puede reactivarse si se necesita generar clientes desde un archivo openapi.yaml manual -->
+            <!--
             <plugin>
                 <groupId>org.openapitools</groupId>
                 <artifactId>openapi-generator-maven-plugin</artifactId>
@@ -165,8 +193,10 @@
                     </execution>
                 </executions>
             </plugin>
+            -->
 
         </plugins>
     </build>
 
 </project>
+
