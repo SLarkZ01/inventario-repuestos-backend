@@ -96,7 +96,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.5.0</version>
+            <version>2.6.0</version>
         </dependency>
 
         <!-- jackson-dataformat-yaml para el controlador estático OpenApiStaticController -->
@@ -113,17 +113,17 @@
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-core-jakarta</artifactId>
-                <version>2.2.15</version>
+                <version>2.2.22</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-annotations-jakarta</artifactId>
-                <version>2.2.15</version>
+                <version>2.2.22</version>
             </dependency>
             <dependency>
                 <groupId>io.swagger.core.v3</groupId>
                 <artifactId>swagger-models-jakarta</artifactId>
-                <version>2.2.15</version>
+                <version>2.2.22</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -199,4 +199,3 @@
     </build>
 
 </project>
-
