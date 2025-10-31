@@ -702,7 +702,7 @@ paths:
                   fecha: '2024-10-30T10:30:00Z'
         '400':
           description: Datos inválidos
-  /api/favoritos/products/{productoId}:
+  /api/favoritos/productos/{productoId}:
     post:
       tags:
       - Favoritos
@@ -723,7 +723,7 @@ paths:
           content:
             application/json:
               example:
-                favorite:
+                favorito:
                   id: 507fabc123def456789012ab
                   productoId: 507f191e810c19729de860ea
                   usuarioId: 507f1f77bcf86cd799439011
@@ -754,64 +754,8 @@ paths:
           content:
             application/json:
               example:
-                success: true
-                message: Producto removido de favoritos
-        '401':
-          description: Usuario no autenticado
-  /api/favoritos/productos/{productoId}:
-    post:
-      tags:
-      - Favoritos
-      summary: Agregar producto a favoritos
-      description: Añade un producto a la lista de favoritos del usuario autenticado
-      operationId: add_1
-      parameters:
-      - name: productoId
-        in: path
-        description: ID del producto a agregar
-        required: true
-        schema:
-          type: string
-        example: 507f191e810c19729de860ea
-      responses:
-        '201':
-          description: Favorito creado exitosamente
-          content:
-            application/json:
-              example:
-                favorite:
-                  id: 507fabc123def456789012ab
-                  productoId: 507f191e810c19729de860ea
-                  usuarioId: 507f1f77bcf86cd799439011
-                  fechaCreacion: '2024-10-30T10:30:00Z'
-        '400':
-          description: Solicitud inválida
-        '401':
-          description: Usuario no autenticado
-        '404':
-          description: Producto no encontrado
-    delete:
-      tags:
-      - Favoritos
-      summary: Remover producto de favoritos
-      description: Remueve un producto de la lista de favoritos del usuario autenticado
-      operationId: remove_2
-      parameters:
-      - name: productoId
-        in: path
-        description: ID del producto a remover
-        required: true
-        schema:
-          type: string
-        example: 507f191e810c19729de860ea
-      responses:
-        '200':
-          description: Favorito removido exitosamente
-          content:
-            application/json:
-              example:
-                success: true
-                message: Producto removido de favoritos
+                exito: true
+                mensaje: Producto removido de favoritos
         '401':
           description: Usuario no autenticado
   /api/facturas:
@@ -1510,7 +1454,7 @@ paths:
           content:
             application/json:
               example:
-                content:
+                favoritos:
                 - id: 507fabc123def456789012ab
                   productoId: 507f191e810c19729de860ea
                   producto:
@@ -1518,10 +1462,10 @@ paths:
                     precio: 25.5
                 page: 0
                 size: 20
-                totalElements: 5
+                total: 5
         '401':
           description: Usuario no autenticado
-  /api/favoritos/products/{productoId}/is:
+  /api/favoritos/productos/{productoId}/es-favorito:
     get:
       tags:
       - Favoritos
@@ -1543,32 +1487,7 @@ paths:
           content:
             application/json:
               example:
-                favorite: true
-        '401':
-          description: Usuario no autenticado
-  /api/favoritos/productos/{productoId}/es-favorito:
-    get:
-      tags:
-      - Favoritos
-      summary: Comprobar favorito
-      description: Comprueba si un producto está en la lista de favoritos del usuario
-        autenticado
-      operationId: isFav_1
-      parameters:
-      - name: productoId
-        in: path
-        description: ID del producto a verificar
-        required: true
-        schema:
-          type: string
-        example: 507f191e810c19729de860ea
-      responses:
-        '200':
-          description: Estado del favorito
-          content:
-            application/json:
-              example:
-                favorite: true
+                favorito: true
         '401':
           description: Usuario no autenticado
   /api/facturas/{id}:
