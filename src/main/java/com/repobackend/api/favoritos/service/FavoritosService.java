@@ -1,4 +1,4 @@
-package com.repobackend.api.wishlist.service;
+package com.repobackend.api.favoritos.service;
 
 import java.util.List;
 import java.util.Map;
@@ -10,8 +10,8 @@ import org.springframework.stereotype.Service;
 
 import com.repobackend.api.producto.dto.ProductoResponse;
 import com.repobackend.api.producto.service.ProductoService;
-import com.repobackend.api.wishlist.model.Favorite;
-import com.repobackend.api.wishlist.repository.FavoriteRepository;
+import com.repobackend.api.favoritos.model.Favorite;
+import com.repobackend.api.favoritos.repository.FavoriteRepository;
 
 @Service
 public class WishlistService {

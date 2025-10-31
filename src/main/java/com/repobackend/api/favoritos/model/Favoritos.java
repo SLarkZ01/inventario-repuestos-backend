@@ -1,4 +1,4 @@
-package com.repobackend.api.wishlist.model;
+package com.repobackend.api.favoritos.model;
 
 import java.util.Date;
 
