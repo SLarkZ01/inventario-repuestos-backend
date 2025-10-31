@@ -10,15 +10,15 @@ import org.springframework.stereotype.Service;
 
 import com.repobackend.api.producto.dto.ProductoResponse;
 import com.repobackend.api.producto.service.ProductoService;
-import com.repobackend.api.favoritos.model.Favorite;
-import com.repobackend.api.favoritos.repository.FavoriteRepository;
+import com.repobackend.api.favoritos.model.Favoritos;
+import com.repobackend.api.favoritos.repository.FavoritosRepository;
 
 @Service
-public class WishlistService {
-    private final FavoriteRepository favoriteRepository;
+public class FavoritosService {
+    private final FavoritosRepository favoriteRepository;
     private final ProductoService productoService;
 
-    public WishlistService(FavoriteRepository favoriteRepository, ProductoService productoService) {
+    public FavoritosService(FavoritosRepository favoriteRepository, ProductoService productoService) {
         this.favoriteRepository = favoriteRepository;
         this.productoService = productoService;
     }
@@ -28,24 +28,24 @@ public class WishlistService {
         // Validar que el producto exista antes de crear el favorito
         try {
             var maybeProd = productoService.getById(productoId);
-            if (maybeProd == null || maybeProd.isEmpty()) {
+            if (maybeProd.isEmpty()) {
                 return Map.of("error", "Producto no encontrado");
             }
         } catch (Exception ex) {
             // Si ocurre un error al consultar el producto, responder con error general
             return Map.of("error", "Error verificando producto: " + ex.getMessage());
         }
-        Favorite existing = favoriteRepository.findByUsuarioIdAndProductoId(usuarioId, productoId);
+        Favoritos existing = favoriteRepository.findByUsuarioIdAndProductoId(usuarioId, productoId);
         if (existing != null) return Map.of("favorite", existing);
-        Favorite f = new Favorite();
+        Favoritos f = new Favoritos();
         f.setUsuarioId(usuarioId);
         f.setProductoId(productoId);
-        Favorite saved = favoriteRepository.save(f);
+        Favoritos saved = favoriteRepository.save(f);
         return Map.of("favorite", saved);
     }
 
     public Map<String, Object> removeFavorite(String usuarioId, String productoId) {
-        Favorite existing = favoriteRepository.findByUsuarioIdAndProductoId(usuarioId, productoId);
+        Favoritos existing = favoriteRepository.findByUsuarioIdAndProductoId(usuarioId, productoId);
         if (existing == null) return Map.of("deleted", false);
         favoriteRepository.deleteByUsuarioIdAndProductoId(usuarioId, productoId);
         return Map.of("deleted", true);
@@ -57,7 +57,7 @@ public class WishlistService {
 
         // Batch fetch: obtener todos los productos de la página en una sola consulta para evitar N+1 queries
         List<String> ids = p.getContent().stream()
-            .map(Favorite::getProductoId)
+            .map(Favoritos::getProductoId)
             .filter(Objects::nonNull)
             .distinct()
             .collect(Collectors.toList());
@@ -73,7 +73,7 @@ public class WishlistService {
     }
 
     public boolean isFavorite(String usuarioId, String productoId) {
-        Favorite f = favoriteRepository.findByUsuarioIdAndProductoId(usuarioId, productoId);
+        Favoritos f = favoriteRepository.findByUsuarioIdAndProductoId(usuarioId, productoId);
         return f != null;
     }
 }

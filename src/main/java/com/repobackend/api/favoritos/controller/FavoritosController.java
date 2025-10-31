@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.repobackend.api.favoritos.service.WishlistService;
+import com.repobackend.api.favoritos.service.FavoritosService;
 
 // OpenAPI annotations
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,25 +22,25 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 @RestController
-@RequestMapping("/api/wishlist")
-@Tag(name = "Wishlist", description = "Operaciones para gestionar favoritos del usuario")
-public class WishlistController {
-    private final WishlistService wishlistService;
+@RequestMapping("/api/favoritos")
+@Tag(name = "Favoritos", description = "Operaciones para gestionar productos favoritos del usuario")
+public class FavoritosController {
+    private final FavoritosService favoritosService;
 
-    public WishlistController(WishlistService wishlistService) {
-        this.wishlistService = wishlistService;
+    public FavoritosController(FavoritosService favoritosService) {
+        this.favoritosService = favoritosService;
     }
 
     @Operation(
         summary = "Agregar producto a favoritos",
-        description = "Añade un producto al wishlist del usuario autenticado",
+        description = "Añade un producto a la lista de favoritos del usuario autenticado",
         parameters = {
             @io.swagger.v3.oas.annotations.Parameter(name = "productoId", description = "ID del producto a agregar", required = true, example = "507f191e810c19729de860ea")
         },
         responses = {
             @ApiResponse(responseCode = "201", description = "Favorito creado exitosamente",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"favorite\":{\"id\":\"507fabc123def456789012ab\",\"productoId\":\"507f191e810c19729de860ea\",\"usuarioId\":\"507f1f77bcf86cd799439011\",\"fechaCreacion\":\"2024-10-30T10:30:00Z\"}}")
+                    examples = @ExampleObject(value = "{\"favorito\":{\"id\":\"507fabc123def456789012ab\",\"productoId\":\"507f191e810c19729de860ea\",\"usuarioId\":\"507f1f77bcf86cd799439011\",\"fechaCreacion\":\"2024-10-30T10:30:00Z\"}}")
                 )
             ),
             @ApiResponse(responseCode = "400", description = "Solicitud inválida", content = @Content),
@@ -48,40 +48,45 @@ public class WishlistController {
             @ApiResponse(responseCode = "404", description = "Producto no encontrado", content = @Content)
         }
     )
-    @PostMapping("/products/{productoId}")
+    @PostMapping("/productos/{productoId}")
     public ResponseEntity<?> add(@PathVariable String productoId, Authentication authentication) {
         String userId = authentication == null ? null : authentication.getName();
-        var r = wishlistService.addFavorite(userId, productoId);
+        var r = favoritosService.addFavorite(userId, productoId);
         if (r.containsKey("error")) {
             Object err = r.get("error");
             if (err != null && err.toString().contains("Producto no encontrado")) {
-                return ResponseEntity.status(404).body(r);
+                return ResponseEntity.status(404).body(Map.of("error", err));
             }
             return ResponseEntity.badRequest().body(r);
         }
-        return ResponseEntity.status(201).body(r);
+        Object fav = r.get("favorite");
+        return ResponseEntity.status(201).body(Map.of("favorito", fav));
     }
 
     @Operation(
         summary = "Remover producto de favoritos",
-        description = "Remueve un producto del wishlist del usuario autenticado",
+        description = "Remueve un producto de la lista de favoritos del usuario autenticado",
         parameters = {
             @io.swagger.v3.oas.annotations.Parameter(name = "productoId", description = "ID del producto a remover", required = true, example = "507f191e810c19729de860ea")
         },
         responses = {
             @ApiResponse(responseCode = "200", description = "Favorito removido exitosamente",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"success\":true,\"message\":\"Producto removido de favoritos\"}")
+                    examples = @ExampleObject(value = "{\"exito\":true,\"mensaje\":\"Producto removido de favoritos\"}")
                 )
             ),
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado", content = @Content)
         }
     )
-    @DeleteMapping("/products/{productoId}")
+    @DeleteMapping("/productos/{productoId}")
     public ResponseEntity<?> remove(@PathVariable String productoId, Authentication authentication) {
         String userId = authentication == null ? null : authentication.getName();
-        var r = wishlistService.removeFavorite(userId, productoId);
-        return ResponseEntity.ok(r);
+        var r = favoritosService.removeFavorite(userId, productoId);
+        boolean deleted = Boolean.TRUE.equals(r.get("deleted"));
+        return ResponseEntity.ok(Map.of(
+            "exito", deleted,
+            "mensaje", deleted ? "Producto removido de favoritos" : "El producto no estaba en favoritos"
+        ));
     }
 
     @Operation(
@@ -95,7 +100,7 @@ public class WishlistController {
             @ApiResponse(responseCode = "200", description = "Lista de favoritos",
                 content = @Content(mediaType = "application/json",
                     examples = @ExampleObject(
-                        value = "{\"content\":[{\"id\":\"507fabc123def456789012ab\",\"productoId\":\"507f191e810c19729de860ea\",\"producto\":{\"nombre\":\"Filtro de Aceite\",\"precio\":25.50}}],\"page\":0,\"size\":20,\"totalElements\":5}"
+                        value = "{\"favoritos\":[{\"id\":\"507fabc123def456789012ab\",\"productoId\":\"507f191e810c19729de860ea\",\"producto\":{\"nombre\":\"Filtro de Aceite\",\"precio\":25.50}}],\"page\":0,\"size\":20,\"total\":5}"
                     )
                 )
             ),
@@ -107,8 +112,15 @@ public class WishlistController {
                                   @RequestParam(required = false, defaultValue = "20") int size,
                                   Authentication authentication) {
         String userId = authentication == null ? null : authentication.getName();
-        var r = wishlistService.listFavorites(userId, page, size);
-        return ResponseEntity.ok(r);
+        var r = favoritosService.listFavorites(userId, page, size);
+        var items = r.get("favorites");
+        var total = r.get("total");
+        return ResponseEntity.ok(Map.of(
+            "favoritos", items,
+            "total", total,
+            "page", page,
+            "size", size
+        ));
     }
 
     @Operation(
@@ -120,16 +132,16 @@ public class WishlistController {
         responses = {
             @ApiResponse(responseCode = "200", description = "Estado del favorito",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"favorite\":true}")
+                    examples = @ExampleObject(value = "{\"favorito\":true}")
                 )
             ),
             @ApiResponse(responseCode = "401", description = "Usuario no autenticado", content = @Content)
         }
     )
-    @GetMapping("/products/{productoId}/is")
+    @GetMapping("/productos/{productoId}/es-favorito")
     public ResponseEntity<?> isFav(@PathVariable String productoId, Authentication authentication) {
         String userId = authentication == null ? null : authentication.getName();
-        boolean fav = wishlistService.isFavorite(userId, productoId);
-        return ResponseEntity.ok(Map.of("favorite", fav));
+        boolean fav = favoritosService.isFavorite(userId, productoId);
+        return ResponseEntity.ok(Map.of("favorito", fav));
     }
 }

@@ -5,8 +5,8 @@ import java.util.Date;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-@Document(collection = "favorites")
-public class Favorite {
+@Document(collection = "favoritos")
+public class Favoritos {
     @Id
     private String id;
     private String usuarioId;
