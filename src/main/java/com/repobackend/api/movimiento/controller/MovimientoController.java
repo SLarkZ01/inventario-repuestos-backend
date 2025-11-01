@@ -2,12 +2,12 @@ package com.repobackend.api.movimiento.controller;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -93,14 +93,17 @@ public class MovimientoController {
     public ResponseEntity<?> listar(@RequestParam(required = false) String productoId, @RequestParam(required = false) String tipo) {
         if (productoId != null) {
             List<Movimiento> res = movimientoService.listarPorProducto(productoId);
-            return ResponseEntity.ok(Map.of("movimientos", res));
+            List<MovimientoResponse> dto = res.stream().map(this::toDto).collect(Collectors.toList());
+            return ResponseEntity.ok(Map.of("movimientos", dto));
         }
         if (tipo != null) {
             List<Movimiento> res = movimientoService.listarPorTipo(tipo);
-            return ResponseEntity.ok(Map.of("movimientos", res));
+            List<MovimientoResponse> dto = res.stream().map(this::toDto).collect(Collectors.toList());
+            return ResponseEntity.ok(Map.of("movimientos", dto));
         }
         List<Movimiento> all = movimientoService.listarTodos();
-        return ResponseEntity.ok(Map.of("movimientos", all));
+        List<MovimientoResponse> dto = all.stream().map(this::toDto).collect(Collectors.toList());
+        return ResponseEntity.ok(Map.of("movimientos", dto));
     }
 
     @Operation(summary = "Obtener movimiento por id", description = "Devuelve un movimiento por su id",
@@ -110,22 +113,25 @@ public class MovimientoController {
     public ResponseEntity<?> getMovimiento(@PathVariable String id) {
         var maybe = movimientoService.getById(id);
         if (maybe.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Movimiento no encontrado"));
-        return ResponseEntity.ok(Map.of("movimiento", maybe.get()));
+        return ResponseEntity.ok(Map.of("movimiento", toDto(maybe.get())));
     }
 
-    @Operation(summary = "Actualizar movimiento (no soportado)", description = "PUT no soportado; se devuelve 405 con explicación",
-        responses = {@ApiResponse(responseCode = "405", description = "Método no permitido", content = @Content)})
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateMovimiento() {
-        // Para mantener integridad y trazabilidad de movimientos consideramos
-        // los movimientos como registros históricos inmutables. En lugar de
-        // permitir la edición directa (PUT), se recomienda crear un movimiento
-        // compensatorio (ej. un egreso para revertir un ingreso) usando POST /api/movimientos.
-        //
-        // Esto evita problemas de consistencia en el stock y facilita auditoría.
-        return ResponseEntity.status(405).body(Map.of(
-            "error", "PUT no soportado para movimientos. Use POST para crear un movimiento compensatorio o contacte al administrador.",
-            "hint", "Para corregir un movimiento cree un nuevo movimiento de tipo contrario (egreso/ingreso) con la cantidad correcta."
-        ));
+    // NOTA: No existe handler PUT para /{id} porque los movimientos son registros históricos
+    // inmutables. Si se intenta hacer PUT en esta ruta, Spring devolverá 405 Method Not Allowed
+    // y el header Allow incluirá los métodos permitidos (GET, POST). Si se requiere una
+    // corrección, cree un movimiento compensatorio mediante POST /api/movimientos.
+
+    private MovimientoResponse toDto(Movimiento m) {
+        MovimientoResponse r = new MovimientoResponse();
+        r.id = m.getId();
+        r.tipo = m.getTipo();
+        r.productoId = m.getProductoId();
+        r.cantidad = m.getCantidad();
+        r.referencia = m.getReferencia();
+        r.notas = m.getNotas();
+        r.creadoEn = m.getCreadoEn();
+        if (m.getRealizadoPor() != null) r.realizadoPor = m.getRealizadoPor().toHexString();
+        else r.realizadoPor = null;
+        return r;
     }
 }

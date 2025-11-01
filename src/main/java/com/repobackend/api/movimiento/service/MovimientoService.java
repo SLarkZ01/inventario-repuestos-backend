@@ -16,6 +16,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.repobackend.api.movimiento.dto.MovimientoRequest;
 import com.repobackend.api.movimiento.dto.MovimientoResponse;
 import com.repobackend.api.movimiento.model.Movimiento;
+import com.repobackend.api.movimiento.model.MovimientoTipo;
 import com.repobackend.api.movimiento.repository.MovimientoRepository;
 
 @Service
@@ -37,16 +38,21 @@ public class MovimientoService {
         }
         Movimiento old = maybe.get();
 
-        // calcular efecto anterior y nuevo
+        MovimientoTipo oldTipo = MovimientoTipo.fromStringIgnoreCase(old.getTipo());
+        MovimientoTipo newTipo = MovimientoTipo.fromStringIgnoreCase(req.tipo);
+        if (newTipo == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tipo de movimiento inválido");
+        if (oldTipo == null) oldTipo = newTipo; // si el registro antiguo tiene un tipo extraño, asumimos nuevo para cálculo
+
+        // calcular efecto anterior y nuevo usando signo del enum
         int oldCantidad = old.getCantidad() == null ? 0 : old.getCantidad();
-        int oldEffect = "entrada".equalsIgnoreCase(old.getTipo()) ? oldCantidad : -oldCantidad;
+        int oldEffect = oldTipo.efectoSigno() * oldCantidad;
 
         int newCantidad = req.cantidad == null ? 0 : req.cantidad;
-        int newEffect = "entrada".equalsIgnoreCase(req.tipo) ? newCantidad : -newCantidad;
+        int newEffect = newTipo.efectoSigno() * newCantidad;
 
         try {
             // si cambia producto, revertir efecto en producto antiguo y aplicar en nuevo
-            if (!old.getProductoId().equals(req.productoId)) {
+            if (old.getProductoId() == null || !old.getProductoId().equals(req.productoId)) {
                 if (old.getProductoId() != null) {
                     productoService.ajustarStock(old.getProductoId(), -oldEffect);
                 }
@@ -81,70 +87,41 @@ public class MovimientoService {
         }
     }
 
+    /**
+     * Método antiguo que recibe un Map. Para evitar duplicación delegamos al DTO.
+     */
     public Map<String, Object> crearMovimiento(Map<String, Object> body) {
-        logger.info("crearMovimiento body={}", body);
-        // validaciones mínimas
-        String tipo = (String) body.get("tipo");
-        String productoId = (String) body.get("productoId");
-        Number cantidadN = (Number) body.getOrDefault("cantidad", 0);
-        if (tipo == null || productoId == null || cantidadN == null) {
-            logger.warn("Datos invalidos para crear movimiento: tipo/productoId/cantidad faltantes");
-            return Map.of("error", "Campos requeridos: tipo, productoId, cantidad");
-        }
-        int cantidad = cantidadN.intValue();
-        if (cantidad <= 0) {
-            logger.warn("cantidad invalida: {}", cantidad);
-            return Map.of("error", "cantidad debe ser mayor a 0");
-        }
+        // Map-based API usada por código interno o listeners; convertimos a DTO y delegamos
+        MovimientoRequest req = new MovimientoRequest();
+        req.tipo = (String) body.get("tipo");
+        req.productoId = (String) body.get("productoId");
+        Number n = (Number) body.getOrDefault("cantidad", 0);
+        req.cantidad = n == null ? null : n.intValue();
+        req.referencia = (String) body.getOrDefault("referencia", null);
+        req.notas = (String) body.getOrDefault("notas", null);
+        Object rp = body.get("realizadoPor");
+        req.realizadoPor = rp == null ? null : rp.toString();
 
-        try {
-            Movimiento m = new Movimiento();
-            m.setTipo(tipo);
-            m.setProductoId(productoId);
-            m.setCantidad(cantidad);
-            m.setReferencia((String) body.getOrDefault("referencia", null));
-            m.setNotas((String) body.getOrDefault("notas", null));
-            Object rp = body.get("realizadoPor");
-            if (rp == null) {
-                m.setRealizadoPor(null);
-            } else {
-                // aceptar string hex o directamente ObjectId
-                try {
-                    if (rp instanceof ObjectId) {
-                        m.setRealizadoPor((ObjectId) rp);
-                    } else {
-                        m.setRealizadoPor(new ObjectId(rp.toString()));
-                    }
-                } catch (IllegalArgumentException iae) {
-                    logger.warn("realizadoPor invalido, no es ObjectId hex: {}", rp);
-                    return Map.of("error", "realizadoPor invalido");
-                }
-            }
-            m.setCreadoEn(new Date());
-
-            Movimiento saved = movimientoRepository.save(m);
-
-            // ajustar stock en producto: entrada -> +cantidad, salida -> -cantidad
-            if ("entrada".equalsIgnoreCase(tipo)) {
-                productoService.ajustarStock(productoId, cantidad);
-            } else if ("salida".equalsIgnoreCase(tipo)) {
-                productoService.ajustarStock(productoId, -cantidad);
-            }
-
-            return Map.of("movimiento", saved);
-        } catch (Exception ex) {
-            logger.error("Error al crear movimiento", ex);
-            throw ex; // dejar que GlobalExceptionHandler lo capture y lo reporte
-        }
+        MovimientoResponse resp = crearMovimiento(req);
+        return Map.of("movimiento", resp);
     }
 
     // Nuevo: crear usando DTO
     public MovimientoResponse crearMovimiento(MovimientoRequest req) {
         logger.info("crearMovimiento DTO req={}", req);
         // validaciones anotadas en DTO con @Valid en controlador
+        MovimientoTipo tipo = MovimientoTipo.fromStringIgnoreCase(req.tipo);
+        if (tipo == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Tipo de movimiento inválido");
+
+        // Si se especifica almacenId, rechazamos aquí y pedimos usar StockService.adjustStock
+        if (req.almacenId != null && !req.almacenId.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Para ajustes por almacén use /api/stock/adjust (StockService) para asegurar atomicidad y auditoría");
+        }
+
         try {
             Movimiento m = new Movimiento();
-            m.setTipo(req.tipo);
+            // Normalizamos el tipo a la representación del enum (mayúsculas) para mantener consistencia
+            m.setTipo(tipo.name());
             m.setProductoId(req.productoId);
             m.setCantidad(req.cantidad);
             m.setReferencia(req.referencia);
@@ -156,24 +133,24 @@ public class MovimientoService {
                     m.setRealizadoPor(new ObjectId(req.realizadoPor));
                 } catch (IllegalArgumentException iae) {
                     logger.warn("realizadoPor invalido en DTO: {}", req.realizadoPor);
-                    throw iae;
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "realizadoPor invalido");
                 }
             }
             m.setCreadoEn(new Date());
 
             Movimiento saved = movimientoRepository.save(m);
 
-            if ("entrada".equalsIgnoreCase(req.tipo)) {
-                productoService.ajustarStock(req.productoId, req.cantidad);
-            } else if ("salida".equalsIgnoreCase(req.tipo)) {
-                productoService.ajustarStock(req.productoId, -req.cantidad);
-            }
+            // ajustar stock acorde al signo del tipo
+            int signo = tipo.efectoSigno();
+            productoService.ajustarStock(req.productoId, signo * req.cantidad);
 
             MovimientoResponse resp = toResponse(saved);
             return resp;
+        } catch (ResponseStatusException rse) {
+            throw rse;
         } catch (Exception ex) {
             logger.error("Error al crear movimiento DTO", ex);
-            throw ex;
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Error al crear movimiento");
         }
     }
 

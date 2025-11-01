@@ -197,14 +197,30 @@ public class ProductoService {
     }
 
     public Map<String, Object> ajustarStock(String id, int delta) {
-        Optional<Producto> maybe = productoRepository.findById(id);
-        if (maybe.isEmpty()) return Map.of("error", "Producto no encontrado");
-        Producto p = maybe.get();
-    Integer currentObj = p.getStock();
-    int current = currentObj == null ? 0 : currentObj;
-        p.setStock(Math.max(0, current + delta));
-        Producto saved = productoRepository.save(p);
-        return Map.of("producto", saved);
+        // Ajuste atómico en la colección de productos usando findAndModify/inc
+        // - delta > 0: incrementa (no necesita comprobar stock previo)
+        // - delta < 0: decrementa condicionalmente, sólo si stock >= need
+        if (delta == 0) {
+            Optional<Producto> maybe = productoRepository.findById(id);
+            if (maybe.isEmpty()) return Map.of("error", "Producto no encontrado");
+            return Map.of("producto", maybe.get());
+        }
+
+        if (delta > 0) {
+            Query q = Query.query(Criteria.where("_id").is(id));
+            Update u = new Update().inc("stock", delta);
+            Producto updated = mongoTemplate.findAndModify(q, u, FindAndModifyOptions.options().returnNew(true), Producto.class);
+            if (updated == null) return Map.of("error", "Producto no encontrado");
+            return Map.of("producto", updated);
+        }
+
+        // delta < 0: decrementar sólo si hay stock suficiente
+        int need = -delta;
+        Query q = Query.query(Criteria.where("_id").is(id).and("stock").gte(need));
+        Update u = new Update().inc("stock", delta);
+        Producto updated = mongoTemplate.findAndModify(q, u, FindAndModifyOptions.options().returnNew(true), Producto.class);
+        if (updated == null) return Map.of("error", "Producto no encontrado o stock insuficiente");
+        return Map.of("producto", updated);
     }
 
     /**

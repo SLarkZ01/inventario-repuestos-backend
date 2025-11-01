@@ -24,6 +24,8 @@ import com.repobackend.api.factura.model.FacturaItem;
 import com.repobackend.api.auth.model.User;
 import com.repobackend.api.factura.repository.FacturaRepository;
 import com.repobackend.api.auth.repository.UserRepository;
+import com.repobackend.api.stock.service.StockService;
+import com.repobackend.api.producto.model.Producto;
 
 @Service
 public class FacturaService {
@@ -35,15 +37,17 @@ public class FacturaService {
     private final CarritoService carritoService;
     private final ProductoService productoService;
     private final MovimientoService movimientoService;
+    private final StockService stockService;
 
     public FacturaService(FacturaRepository facturaRepository, UserRepository userRepository, SequenceGeneratorService sequenceGeneratorService,
-                          CarritoService carritoService, ProductoService productoService, MovimientoService movimientoService) {
+                          CarritoService carritoService, ProductoService productoService, MovimientoService movimientoService, StockService stockService) {
         this.facturaRepository = facturaRepository;
         this.userRepository = userRepository;
         this.sequenceGeneratorService = sequenceGeneratorService;
         this.carritoService = carritoService;
         this.productoService = productoService;
         this.movimientoService = movimientoService;
+        this.stockService = stockService;
     }
 
     // New typed method using DTO
@@ -105,20 +109,41 @@ public class FacturaService {
             String productoId = entry.getKey();
             int totalQty = entry.getValue() == null ? 0 : entry.getValue();
 
-            // intentar decrementar stock condicionalmente una sola vez con la suma de cantidades
-            var updated = productoService.decreaseStockIfAvailable(productoId, totalQty);
-            if (updated == null) {
+            // Asignar y decrementar stock por almacén usando StockService.adjustStock
+            int remaining = totalQty;
+            // Obtener lista de almacenes con stock para este producto
+            var stockRows = stockService.getStockByProducto(productoId);
+            double precioUnitario = 0.0;
+            Producto lastUpdatedProduct = null;
+            for (var row : stockRows) {
+                if (remaining <= 0) break;
+                int available = row.getCantidad() == null ? 0 : row.getCantidad();
+                if (available <= 0) continue;
+                int take = Math.min(available, remaining);
+                // ajustar stock en ese almacén (delta negativo)
+                var res = stockService.adjustStock(productoId, row.getAlmacenId(), -take, realizadoPor);
+                if (res.containsKey("error")) {
+                    throw new IllegalStateException("Error ajustando stock en almacen " + row.getAlmacenId() + ": " + res.get("error"));
+                }
+                // res contiene 'stock' (registro) y 'total'
+                Object prodObj = res.get("stock");
+                // actualizar referencia de producto con precio desde repo (si disponible)
+                if (lastUpdatedProduct == null) {
+                    lastUpdatedProduct = productoService.getById(productoId).orElse(null);
+                    if (lastUpdatedProduct != null && lastUpdatedProduct.getPrecio() != null) precioUnitario = lastUpdatedProduct.getPrecio();
+                }
+                remaining -= take;
+            }
+            if (remaining > 0) {
+                // No alcanzó el stock disponible en almacenes
                 throw new IllegalStateException("Stock insuficiente para producto: " + productoId);
             }
-
-            // crear movimiento de salida (sin ajustar stock porque ya lo hicimos). Usar referencia 'venta' y notas null
-            movimientoService.crearMovimientoSinAjuste("salida", productoId, totalQty, realizadoPor, "venta", null);
 
             // preparar items de factura
             FacturaItem fi = new FacturaItem();
             fi.setProductoId(productoId);
             fi.setCantidad(totalQty);
-            fi.setPrecioUnitario(updated.getPrecio() == null ? 0.0 : updated.getPrecio());
+            fi.setPrecioUnitario(precioUnitario);
             facturaItems.add(fi);
             total += fi.getCantidad() * fi.getPrecioUnitario();
         }
