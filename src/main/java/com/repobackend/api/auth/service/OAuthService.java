@@ -27,12 +27,6 @@ public class OAuthService {
     @Value("${app.oauth.google.client-id:}")
     private String googleClientId;
 
-    @Value("${app.oauth.facebook.app-id:}")
-    private String facebookAppId;
-
-    @Value("${app.oauth.facebook.app-secret:}")
-    private String facebookAppSecret;
-
     // Verify Google ID token and check audience (aud) matches configured client id
     public Map<String, Object> verifyGoogleToken(String idToken) throws OAuthException {
         try {
@@ -67,41 +61,6 @@ public class OAuthService {
         } catch (IOException | InterruptedException ex) {
             if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
             throw new OAuthException("Failed to verify Google token", ex, 502);
-        }
-    }
-
-    // Verify Facebook access token: first call debug_token to verify app_id, then fetch user info
-    public Map<String, Object> verifyFacebookToken(String accessToken) throws OAuthException {
-        try {
-            // debug_token endpoint requires app access token: {app-id}|{app-secret}
-            String appAccess = facebookAppId + "|" + facebookAppSecret;
-            String dbgUrl = "https://graph.facebook.com/debug_token?input_token=" + accessToken + "&access_token=" + appAccess;
-            HttpRequest dbgReq = HttpRequest.newBuilder().uri(URI.create(dbgUrl)).timeout(Duration.ofSeconds(3)).GET().build();
-            HttpResponse<String> dbgResp = http.send(dbgReq, HttpResponse.BodyHandlers.ofString());
-            if (dbgResp.statusCode() != 200) throw new OAuthException("Facebook debug_token status=" + dbgResp.statusCode(), dbgResp.statusCode());
-            Map<String, Object> debugObj = mapper.readValue(dbgResp.body(), new TypeReference<Map<String, Object>>() {});
-            Map<String, Object> data = mapper.convertValue(debugObj.get("data"), new TypeReference<Map<String, Object>>() {});
-            if (data == null) throw new OAuthException("Facebook debug_token returned no data", 400);
-            // check app_id matches and token is valid
-            Object appId = data.get("app_id");
-            if (facebookAppId != null && !facebookAppId.isBlank()) {
-                if (!facebookAppId.equals(String.valueOf(appId))) return null;
-            }
-            Object isValidObj = data.get("is_valid");
-            boolean isValid = false;
-            if (isValidObj instanceof Boolean b) isValid = b; else if (isValidObj != null) isValid = Boolean.parseBoolean(String.valueOf(isValidObj));
-            if (!isValid) throw new OAuthException("Facebook token not valid", 401);
-
-            // now call me endpoint to get id,name,email
-            String meUrl = "https://graph.facebook.com/me?fields=id,name,email&access_token=" + accessToken;
-            HttpRequest meReq = HttpRequest.newBuilder().uri(URI.create(meUrl)).timeout(Duration.ofSeconds(3)).GET().build();
-            HttpResponse<String> meResp = http.send(meReq, HttpResponse.BodyHandlers.ofString());
-            if (meResp.statusCode() != 200) throw new OAuthException("Facebook /me returned status=" + meResp.statusCode(), meResp.statusCode());
-            Map<String, Object> userInfo = mapper.readValue(meResp.body(), new TypeReference<Map<String, Object>>() {});
-            return userInfo;
-        } catch (IOException | InterruptedException ex) {
-            if (ex instanceof InterruptedException) Thread.currentThread().interrupt();
-            throw new OAuthException("Failed to verify Facebook token", ex, 502);
         }
     }
 }

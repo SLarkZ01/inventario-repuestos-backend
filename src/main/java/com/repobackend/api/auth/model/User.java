@@ -23,7 +23,7 @@ public class User {
     private Date fechaCreacion = new Date();
     private Date fechaUltimaConexion;
     private Date passwordChangedAt;
-    private String provider; // e.g. "google", "facebook"
+    private String provider; // e.g. "google"
     private String providerId;
 
     // getters and setters

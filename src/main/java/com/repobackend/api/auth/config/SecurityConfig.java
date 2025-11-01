@@ -54,7 +54,7 @@ public class SecurityConfig {
         http.authorizeHttpRequests(auth -> auth
             // Public auth endpoints
             .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
-            .requestMatchers(HttpMethod.POST, "/api/auth/oauth/google", "/api/auth/oauth/facebook").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/auth/oauth/google").permitAll()
             // Allow bootstrap creation of admin users (service will enforce adminKey if needed)
             .requestMatchers(HttpMethod.POST, "/api/admin/users").permitAll()
             // Springdoc OpenAPI endpoints (swagger-ui, api-docs)
@@ -107,4 +107,3 @@ public class SecurityConfig {
         return source;
     }
 }
-

@@ -152,36 +152,6 @@ public class AuthController {
         return authService.oauthLoginGoogle(idToken, inviteCode, device);
     }
 
-    @Operation(
-        summary = "OAuth Facebook",
-        description = "Autenticación/registro usando Facebook OAuth. Requiere el accessToken obtenido del flujo OAuth de Facebook.",
-        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Token de Facebook y datos opcionales",
-            content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    name = "Login con Facebook",
-                    value = "{\"accessToken\":\"EAABwzLixnjYBO7ZC9bZB...\",\"inviteCode\":\"TALLER-ABC123\",\"device\":\"ios\"}"
-                )
-            )
-        ),
-        responses = {
-            @ApiResponse(responseCode = "200", description = "OAuth exitoso",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"accessToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\"refreshToken\":\"r1234567890\",\"user\":{\"id\":\"507f1f77bcf86cd799439011\",\"email\":\"user@fb.com\"}}")
-                )
-            ),
-            @ApiResponse(responseCode = "400", description = "Token de Facebook inválido", content = @Content)
-        }
-    )
-    @PostMapping("/oauth/facebook")
-    public ResponseEntity<?> oauthFacebook(@RequestBody java.util.Map<String, String> body) {
-        String accessToken = body.get("accessToken");
-        String inviteCode = body.get("inviteCode");
-        String device = body.get("device");
-        return authService.oauthLoginFacebook(accessToken, inviteCode, device);
-    }
-
     @Operation(summary = "Revocar todos los refresh tokens", description = "Revoca todos los refresh tokens del usuario autenticado",
         responses = {@ApiResponse(responseCode = "200", description = "Revocado", content = @Content)})
     @PostMapping("/revoke-all")
