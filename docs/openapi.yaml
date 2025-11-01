@@ -338,7 +338,7 @@ paths:
       - Talleres
       summary: Crear invitación por código
       description: 'Genera un código de invitación para que usuarios puedan unirse
-        a un taller. Roles disponibles: VENDEDOR, ADMIN, MECANICO.'
+        a un taller. Roles disponibles: VENDEDOR, ADMIN.'
       operationId: crearInvitacionCodigo
       parameters:
       - name: tallerId
