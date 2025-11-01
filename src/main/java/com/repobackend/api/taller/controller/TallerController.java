@@ -101,7 +101,7 @@ public class TallerController {
 
     @Operation(
         summary = "Crear invitación por código",
-        description = "Genera un código de invitación para que usuarios puedan unirse a un taller. Roles disponibles: VENDEDOR, ADMIN, MECANICO.",
+        description = "Genera un código de invitación para que usuarios puedan unirse a un taller. Roles disponibles: VENDEDOR, ADMIN.",
         parameters = {
             @io.swagger.v3.oas.annotations.Parameter(name = "tallerId", description = "ID del taller", required = true, example = "507f1f77bcf86cd799439777")
         },

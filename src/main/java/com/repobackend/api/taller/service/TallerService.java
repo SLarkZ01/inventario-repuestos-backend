@@ -98,19 +98,25 @@ public class TallerService {
         boolean isAdmin = t.getMiembros().stream().anyMatch(m -> fromUserId.equals(String.valueOf(m.get("userId"))) && ((java.util.List<String>) m.get("roles")).contains("ADMIN"));
         if (!isAdmin && !t.getOwnerId().equals(fromUserId)) return Map.of("error", "Permisos insuficientes");
 
-        // generate short code: 6 alphanumeric chars
-        String raw = UUID.randomUUID().toString().replaceAll("-", "").substring(0, 8).toUpperCase();
-        String code = raw.substring(0, 6);
-        Invitation inv = new Invitation();
-        inv.setTallerId(tallerId);
-        inv.setFromUserId(fromUserId);
-        inv.setRole(role == null ? "VENDEDOR" : role);
-        inv.setCodeHash(sha256(code));
-        inv.setExpiresAt(new Date(System.currentTimeMillis() + (long)daysValid * 24 * 3600 * 1000));
-        invitationRepository.save(inv);
-        // return code to caller (owner) — caller should communicate code to invitee
-        return Map.of("code", code, "expiresAt", inv.getExpiresAt());
-    }
+        // Validar rol permitido: solo VENDEDOR o ADMIN
+        String normalizedRole = role == null ? "VENDEDOR" : role.trim().toUpperCase();
+        if (!normalizedRole.equals("VENDEDOR") && !normalizedRole.equals("ADMIN")) {
+            return Map.of("error", "Role inválido. Roles permitidos: VENDEDOR, ADMIN");
+        }
+
+         // generate short code: 6 alphanumeric chars
+         String raw = UUID.randomUUID().toString().replaceAll("-", "").substring(0, 8).toUpperCase();
+         String code = raw.substring(0, 6);
+         Invitation inv = new Invitation();
+         inv.setTallerId(tallerId);
+         inv.setFromUserId(fromUserId);
+         inv.setRole(normalizedRole);
+         inv.setCodeHash(sha256(code));
+         inv.setExpiresAt(new Date(System.currentTimeMillis() + (long)daysValid * 24 * 3600 * 1000));
+         invitationRepository.save(inv);
+         // return code to caller (owner) — caller should communicate code to invitee
+         return Map.of("code", code, "expiresAt", inv.getExpiresAt());
+     }
 
     public Map<String, Object> acceptInvitationByCode(String userId, String code) {
         String h = sha256(code);
