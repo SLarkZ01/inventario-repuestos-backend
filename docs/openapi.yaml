@@ -156,33 +156,6 @@ paths:
           description: Producto eliminado
         '404':
           description: Producto no encontrado
-  /api/movimientos/{id}:
-    get:
-      tags:
-      - Movimientos
-      summary: Obtener movimiento por id
-      description: Devuelve un movimiento por su id
-      operationId: getMovimiento
-      parameters:
-      - name: id
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Movimiento encontrado
-        '404':
-          description: Movimiento no encontrado
-    put:
-      tags:
-      - Movimientos
-      summary: Actualizar movimiento (no soportado)
-      description: PUT no soportado; se devuelve 405 con explicación
-      operationId: updateMovimiento
-      responses:
-        '405':
-          description: Método no permitido
   /api/categorias/{id}:
     get:
       tags:
@@ -1421,6 +1394,24 @@ paths:
           description: Registro eliminado
         '404':
           description: No encontrado
+  /api/movimientos/{id}:
+    get:
+      tags:
+      - Movimientos
+      summary: Obtener movimiento por id
+      description: Devuelve un movimiento por su id
+      operationId: getMovimiento
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Movimiento encontrado
+        '404':
+          description: Movimiento no encontrado
   /api/favoritos:
     get:
       tags:
@@ -1677,11 +1668,13 @@ components:
           format: int32
     MovimientoRequest:
       required:
+      - cantidad
       - productoId
       - tipo
       type: object
       properties:
         tipo:
+          pattern: (?i)^(INGRESO|EGRESO|VENTA|DEVOLUCION|AJUSTE)$
           type: string
         productoId:
           type: string
@@ -1694,6 +1687,9 @@ components:
         notas:
           type: string
         realizadoPor:
+          pattern: ^[a-fA-F0-9]{24}$
+          type: string
+        almacenId:
           pattern: ^[a-fA-F0-9]{24}$
           type: string
     ClienteRequest:
