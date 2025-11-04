@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 @RestController
 @RequestMapping("/api/productos")
@@ -70,7 +71,7 @@ public class ProductoController {
         parameters = {
             @io.swagger.v3.oas.annotations.Parameter(name = "q", description = "Búsqueda por nombre de producto", example = "filtro"),
             @io.swagger.v3.oas.annotations.Parameter(name = "categoriaId", description = "ID de la categoría para filtrar", example = "507f1f77bcf86cd799439011"),
-            @io.swagger.v3.oas.annotations.Parameter(name = "tallerId", description = "ID del taller/tienda para filtrar productos por tienda", example = "507f1f77bcf86cd799439777"),
+            @io.swagger.v3.oas.annotations.Parameter(name = "tallerId", description = "ID del taller/tienda para filtrar productos por tienda", example = "507f1f77bcf86cd799439777", schema = @Schema(type = "string")),
             @io.swagger.v3.oas.annotations.Parameter(name = "page", description = "Número de página (base 0)", example = "0"),
             @io.swagger.v3.oas.annotations.Parameter(name = "size", description = "Cantidad de elementos por página", example = "20")
         },
