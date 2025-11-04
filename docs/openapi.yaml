@@ -523,6 +523,10 @@ paths:
         schema:
           type: string
         example: 507f1f77bcf86cd799439011
+      - name: tallerId
+        in: query
+        description: ID del taller/tienda para filtrar productos por tienda
+        example: 507f1f77bcf86cd799439777
       - name: page
         in: query
         description: Número de página (base 0)
@@ -576,6 +580,7 @@ paths:
                   precio: 25.5
                   stock: 100
                   categoriaId: 507f1f77bcf86cd799439011
+                  tallerId: 507f1f77bcf86cd799439777
                   specs:
                     Marca: Yamaha
                     Modelo: YZF-R15
@@ -834,8 +839,7 @@ paths:
       tags:
       - Categorias
       summary: Buscar/listar categorías
-      description: Busca categorías por nombre. Si no se proporciona 'q', devuelve
-        lista vacía.
+      description: Busca categorías por nombre o lista categorías globales o por taller.
       operationId: listar_2
       parameters:
       - name: q
@@ -863,16 +867,32 @@ paths:
           format: int32
           default: 20
         example: 20
+      - name: tallerId
+        in: query
+        description: ID del taller para listar categorías locales
+        required: false
+        schema:
+          type: string
+        example: 507f1f77bcf86cd799439777
+      - name: global
+        in: query
+        description: Si true devuelve solo categorías globales (tallerId == null)
+        required: false
+        schema:
+          type: boolean
+          default: false
+        example: false
       responses:
         '200':
           description: Lista de categorías
           content:
             application/json:
               example:
-                content:
+                categorias:
                 - id: 507f1f77bcf86cd799439011
                   nombre: Filtros
-                totalElements: 1
+                  tallerId: null
+                total: 1
     post:
       tags:
       - Categorias
@@ -892,6 +912,8 @@ paths:
                   nombre: Filtros
                   descripcion: Filtros de aceite, aire y combustible
                   iconoRecurso: 2131230988
+                  tallerId: 507f1f77bcf86cd799439777
+                  mappedGlobalCategoryId: null
         required: true
       responses:
         '201':
@@ -902,7 +924,7 @@ paths:
                 categoria:
                   id: 507f1f77bcf86cd799439011
                   nombre: Filtros
-                  descripcion: Filtros de aceite, aire y combustible
+                  tallerId: null
         '400':
           description: Datos inválidos
   /api/carritos:
@@ -1615,6 +1637,8 @@ components:
           type: object
           additionalProperties:
             type: string
+        tallerId:
+          type: string
     CategoriaRequest:
       required:
       - nombre
@@ -1629,6 +1653,10 @@ components:
         iconoRecurso:
           type: integer
           format: int32
+        tallerId:
+          type: string
+        mappedGlobalCategoryId:
+          type: string
     MovimientoRequest:
       required:
       - cantidad
