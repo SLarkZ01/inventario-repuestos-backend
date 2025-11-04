@@ -526,6 +526,8 @@ paths:
       - name: tallerId
         in: query
         description: ID del taller/tienda para filtrar productos por tienda
+        schema:
+          type: string
         example: 507f1f77bcf86cd799439777
       - name: page
         in: query
