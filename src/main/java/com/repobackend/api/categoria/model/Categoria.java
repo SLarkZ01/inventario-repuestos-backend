@@ -3,6 +3,7 @@ package com.repobackend.api.categoria.model;
 import java.util.Date;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -17,6 +18,11 @@ public class Categoria {
     private String nombre;
     private String descripcion;
     private Integer iconoRecurso;
+
+    @Indexed
+    private String tallerId; // null => global category; otherwise local to taller
+    @Indexed
+    private String mappedGlobalCategoryId; // optional mapping to global category
 
     private Date creadoEn = new Date();
 
@@ -34,6 +40,12 @@ public class Categoria {
 
     public Integer getIconoRecurso() { return iconoRecurso; }
     public void setIconoRecurso(Integer iconoRecurso) { this.iconoRecurso = iconoRecurso; }
+
+    public String getTallerId() { return tallerId; }
+    public void setTallerId(String tallerId) { this.tallerId = tallerId; }
+
+    public String getMappedGlobalCategoryId() { return mappedGlobalCategoryId; }
+    public void setMappedGlobalCategoryId(String mappedGlobalCategoryId) { this.mappedGlobalCategoryId = mappedGlobalCategoryId; }
 
     public Date getCreadoEn() { return creadoEn; }
     public void setCreadoEn(Date creadoEn) { this.creadoEn = creadoEn; }

@@ -36,6 +36,8 @@ public class ProductoRequest {
 
     // Especificaciones técnicas (clave -> valor) por ejemplo: {"Marca":"Yamaha", "Cilindraje":"150cc"}
     private java.util.Map<String, String> specs;
+    @JsonAlias({"tallerId"," tallerId "})
+    private String tallerId;
 
     public String getIdString() {
         return idString;
@@ -108,4 +110,7 @@ public class ProductoRequest {
     public void setSpecs(java.util.Map<String, String> specs) {
         this.specs = specs;
     }
+
+    public String getTallerId() { return tallerId; }
+    public void setTallerId(String tallerId) { this.tallerId = tallerId == null ? null : tallerId.trim(); }
 }

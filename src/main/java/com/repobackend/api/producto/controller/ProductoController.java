@@ -44,7 +44,7 @@ public class ProductoController {
                 mediaType = "application/json",
                 examples = @ExampleObject(
                     name = "Ejemplo de producto",
-                    value = "{\"nombre\":\"Filtro de Aceite Yamaha\",\"descripcion\":\"Filtro de aceite para motos Yamaha 150cc\",\"precio\":25.50,\"stock\":100,\"categoriaId\":\"507f1f77bcf86cd799439011\",\"specs\":{\"Marca\":\"Yamaha\",\"Modelo\":\"YZF-R15\",\"Compatibilidad\":\"150cc\"}}"
+                    value = "{\"nombre\":\"Filtro de Aceite Yamaha\",\"descripcion\":\"Filtro de aceite para motos Yamaha 150cc\",\"precio\":25.50,\"stock\":100,\"categoriaId\":\"507f1f77bcf86cd799439011\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"specs\":{\"Marca\":\"Yamaha\",\"Modelo\":\"YZF-R15\",\"Compatibilidad\":\"150cc\"}}"
                 )
             )
         ),
@@ -70,6 +70,7 @@ public class ProductoController {
         parameters = {
             @io.swagger.v3.oas.annotations.Parameter(name = "q", description = "Búsqueda por nombre de producto", example = "filtro"),
             @io.swagger.v3.oas.annotations.Parameter(name = "categoriaId", description = "ID de la categoría para filtrar", example = "507f1f77bcf86cd799439011"),
+            @io.swagger.v3.oas.annotations.Parameter(name = "tallerId", description = "ID del taller/tienda para filtrar productos por tienda", example = "507f1f77bcf86cd799439777"),
             @io.swagger.v3.oas.annotations.Parameter(name = "page", description = "Número de página (base 0)", example = "0"),
             @io.swagger.v3.oas.annotations.Parameter(name = "size", description = "Cantidad de elementos por página", example = "20")
         },

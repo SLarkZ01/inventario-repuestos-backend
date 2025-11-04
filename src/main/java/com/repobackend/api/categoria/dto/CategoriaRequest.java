@@ -11,6 +11,8 @@ public class CategoriaRequest {
     private String descripcion;
 
     private Integer iconoRecurso;
+    private String tallerId;
+    private String mappedGlobalCategoryId;
 
     public String getIdString() {
         return idString;
@@ -42,5 +44,21 @@ public class CategoriaRequest {
 
     public void setIconoRecurso(Integer iconoRecurso) {
         this.iconoRecurso = iconoRecurso;
+    }
+
+    public String getTallerId() {
+        return tallerId;
+    }
+
+    public void setTallerId(String tallerId) {
+        this.tallerId = tallerId == null ? null : tallerId.trim();
+    }
+
+    public String getMappedGlobalCategoryId() {
+        return mappedGlobalCategoryId;
+    }
+
+    public void setMappedGlobalCategoryId(String mappedGlobalCategoryId) {
+        this.mappedGlobalCategoryId = mappedGlobalCategoryId == null ? null : mappedGlobalCategoryId.trim();
     }
 }

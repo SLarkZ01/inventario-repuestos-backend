@@ -8,6 +8,8 @@ public class CategoriaResponse {
     private String nombre;
     private String descripcion;
     private Integer iconoRecurso;
+    private String tallerId;
+    private String mappedGlobalCategoryId;
     private Date creadoEn;
 
     public String getId() {
@@ -49,6 +51,12 @@ public class CategoriaResponse {
     public void setIconoRecurso(Integer iconoRecurso) {
         this.iconoRecurso = iconoRecurso;
     }
+
+    public String getTallerId() { return tallerId; }
+    public void setTallerId(String tallerId) { this.tallerId = tallerId; }
+
+    public String getMappedGlobalCategoryId() { return mappedGlobalCategoryId; }
+    public void setMappedGlobalCategoryId(String mappedGlobalCategoryId) { this.mappedGlobalCategoryId = mappedGlobalCategoryId; }
 
     public Date getCreadoEn() {
         return creadoEn;

@@ -11,26 +11,33 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
 
 import com.repobackend.api.producto.dto.ProductoRequest;
 import com.repobackend.api.producto.dto.ProductoResponse;
 import com.repobackend.api.producto.model.Producto;
 import com.repobackend.api.producto.repository.ProductoRepository;
 import com.repobackend.api.stock.service.StockService;
+import com.repobackend.api.auth.service.AuthorizationService;
 
 @Service
 public class ProductoService {
     private final ProductoRepository productoRepository;
     private final MongoTemplate mongoTemplate;
     private final StockService stockService;
+    private final AuthorizationService authorizationService;
 
-    public ProductoService(ProductoRepository productoRepository, MongoTemplate mongoTemplate, StockService stockService) {
+    public ProductoService(ProductoRepository productoRepository, MongoTemplate mongoTemplate, StockService stockService, AuthorizationService authorizationService) {
         this.productoRepository = productoRepository;
         this.mongoTemplate = mongoTemplate;
         this.stockService = stockService;
+        this.authorizationService = authorizationService;
     }
 
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VENDEDOR')")
     @SuppressWarnings("unchecked")
     public Map<String, Object> crearProducto(Map<String, Object> body) {
         Producto p = new Producto();
@@ -45,22 +52,49 @@ public class ProductoService {
         Number stockN = (Number) body.getOrDefault("stock", 0);
         p.setStock(stockN == null ? 0 : stockN.intValue());
         p.setCategoriaId((String) body.get("categoriaId"));
+        p.setTallerId((String) body.get("tallerId"));
         Number imagen = (Number) body.getOrDefault("imagenRecurso", null);
         if (imagen != null) p.setImagenRecurso(imagen.intValue());
         Object lm = body.get("listaMedios");
         if (lm instanceof List) p.setListaMedios((List<java.util.Map<String, Object>>) lm);
         p.setCreadoEn(new Date());
+        // set owner from authentication if available
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            p.setOwnerId(auth.getName());
+        }
+        // Authorization: ensure caller is platform admin or member of the taller with allowed roles
+        String caller = (auth == null) ? null : auth.getName();
+        if (!authorizationService.isPlatformAdmin(caller)) {
+            String tId = p.getTallerId();
+            if (tId == null || !authorizationService.isMemberWithAnyRole(caller, tId, java.util.List.of("VENDEDOR","ADMIN"))) {
+                return Map.of("error", "Permisos insuficientes para crear producto en este taller");
+            }
+        }
         Producto saved = productoRepository.save(p);
         return Map.of("producto", saved);
     }
 
     // DTO-based creation
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VENDEDOR')")
     public Map<String, Object> crearProducto(ProductoRequest req) {
         Producto p = toEntity(req);
         if (p.getIdString() == null || p.getIdString().isBlank()) {
             p.setIdString(new ObjectId().toHexString());
         }
         p.setCreadoEn(new Date());
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.isAuthenticated()) {
+            p.setOwnerId(auth.getName());
+        }
+        // Authorization: caller must be admin or member of the taller
+        String caller = (auth == null) ? null : auth.getName();
+        if (!authorizationService.isPlatformAdmin(caller)) {
+            String tId = p.getTallerId();
+            if (tId == null || !authorizationService.isMemberWithAnyRole(caller, tId, java.util.List.of("VENDEDOR","ADMIN"))) {
+                return Map.of("error", "Permisos insuficientes para crear producto en este taller");
+            }
+        }
         Producto saved = productoRepository.save(p);
         return Map.of("producto", toResponse(saved));
     }
@@ -151,6 +185,7 @@ public class ProductoService {
         return productoRepository.findByNombreContainingIgnoreCase(q == null ? "" : q);
     }
 
+    @PreAuthorize("hasRole('ADMIN') or @authorizationService.canManageProduct(authentication.name, #id)")
     @SuppressWarnings("unchecked")
     public Map<String, Object> actualizarProducto(String id, Map<String, Object> body) {
         Optional<Producto> maybe = productoRepository.findById(id);
@@ -180,6 +215,7 @@ public class ProductoService {
     }
 
     // DTO-based update
+    @PreAuthorize("hasRole('ADMIN') or @authorizationService.canManageProduct(authentication.name, #id)")
     public Map<String, Object> actualizarProducto(String id, ProductoRequest req) {
         Optional<Producto> maybe = productoRepository.findById(id);
         if (maybe.isEmpty()) return Map.of("error", "Producto no encontrado");
@@ -235,6 +271,7 @@ public class ProductoService {
         return updated;
     }
 
+    @PreAuthorize("hasRole('ADMIN') or @authorizationService.canManageProduct(authentication.name, #id)")
     public Map<String, Object> eliminarProducto(String id) {
         Optional<Producto> maybe = productoRepository.findById(id);
         if (maybe.isEmpty()) return Map.of("error", "Producto no encontrado");

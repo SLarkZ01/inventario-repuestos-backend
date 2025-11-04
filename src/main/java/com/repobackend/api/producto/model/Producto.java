@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.Field;
 
@@ -22,6 +23,9 @@ public class Producto {
     private Integer stock;
     private String categoriaId;
     private Integer imagenRecurso;
+    private String ownerId; // userId del creador / propietario del producto
+    @Indexed
+    private String tallerId; // id del taller al que pertenece el producto
 
     // media items: lista de objetos con keys estandarizadas. Ej: {"type":"image","publicId":"abc123","url":"https://res.cloudinary.com/...","order":0}
     private List<Map<String, Object>> listaMedios;
@@ -55,6 +59,12 @@ public class Producto {
 
     public Integer getImagenRecurso() { return imagenRecurso; }
     public void setImagenRecurso(Integer imagenRecurso) { this.imagenRecurso = imagenRecurso; }
+
+    public String getOwnerId() { return ownerId; }
+    public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
+
+    public String getTallerId() { return tallerId; }
+    public void setTallerId(String tallerId) { this.tallerId = tallerId; }
 
     public List<Map<String, Object>> getListaMedios() { return listaMedios; }
     public void setListaMedios(List<Map<String, Object>> listaMedios) { this.listaMedios = listaMedios; }

@@ -44,14 +44,14 @@ public class CategoriaController {
                 mediaType = "application/json",
                 examples = @ExampleObject(
                     name = "Ejemplo de categoría",
-                    value = "{\"nombre\":\"Filtros\",\"descripcion\":\"Filtros de aceite, aire y combustible\",\"iconoRecurso\":2131230988}"
+                    value = "{\"nombre\":\"Filtros\",\"descripcion\":\"Filtros de aceite, aire y combustible\",\"iconoRecurso\":2131230988,\"tallerId\":\"507f1f77bcf86cd799439777\",\"mappedGlobalCategoryId\":null}"
                 )
             )
         ),
         responses = {
             @ApiResponse(responseCode = "201", description = "Categoría creada exitosamente",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"categoria\":{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros\",\"descripcion\":\"Filtros de aceite, aire y combustible\"}}")
+                    examples = @ExampleObject(value = "{\"categoria\":{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros\",\"tallerId\":null}}")
                 )
             ),
             @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
@@ -66,16 +66,18 @@ public class CategoriaController {
 
     @Operation(
         summary = "Buscar/listar categorías",
-        description = "Busca categorías por nombre. Si no se proporciona 'q', devuelve lista vacía.",
+        description = "Busca categorías por nombre o lista categorías globales o por taller.",
         parameters = {
             @io.swagger.v3.oas.annotations.Parameter(name = "q", description = "Término de búsqueda para nombre de categoría", example = "filtro"),
             @io.swagger.v3.oas.annotations.Parameter(name = "page", description = "Número de página", example = "0"),
-            @io.swagger.v3.oas.annotations.Parameter(name = "size", description = "Elementos por página", example = "20")
+            @io.swagger.v3.oas.annotations.Parameter(name = "size", description = "Elementos por página", example = "20"),
+            @io.swagger.v3.oas.annotations.Parameter(name = "tallerId", description = "ID del taller para listar categorías locales", example = "507f1f77bcf86cd799439777"),
+            @io.swagger.v3.oas.annotations.Parameter(name = "global", description = "Si true devuelve solo categorías globales (tallerId == null)", example = "false")
         },
         responses = {
             @ApiResponse(responseCode = "200", description = "Lista de categorías",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"content\":[{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros\"}],\"totalElements\":1}")
+                    examples = @ExampleObject(value = "{\"categorias\":[{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros\",\"tallerId\":null}],\"total\":1}")
                 )
             )
         }
@@ -83,12 +85,22 @@ public class CategoriaController {
     @GetMapping
     public ResponseEntity<?> listar(@RequestParam(required = false) String q,
                                     @RequestParam(required = false, defaultValue = "0") int page,
-                                    @RequestParam(required = false, defaultValue = "20") int size) {
+                                    @RequestParam(required = false, defaultValue = "20") int size,
+                                    @RequestParam(required = false) String tallerId,
+                                    @RequestParam(required = false, defaultValue = "false") boolean global) {
+        // if search term present, use paginated search across both global and local
         if (q != null && !q.isBlank()) {
             var res = categoriaService.buscarPorNombrePaginado(q, page, size);
             return ResponseEntity.ok(res);
         }
-        return ResponseEntity.ok(Map.of("categorias", List.of()));
+        if (global) {
+            return ResponseEntity.ok(categoriaService.listarCategoriasGlobales(page, size));
+        }
+        if (tallerId != null && !tallerId.isBlank()) {
+            return ResponseEntity.ok(categoriaService.listarCategoriasPorTaller(tallerId, page, size));
+        }
+        // default: return global categories
+        return ResponseEntity.ok(categoriaService.listarCategoriasGlobales(page, size));
     }
 
     @Operation(summary = "Obtener categoría", responses = {@ApiResponse(responseCode = "200", description = "Categoría encontrada", content = @Content),

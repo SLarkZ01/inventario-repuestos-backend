@@ -12,4 +12,7 @@ public interface CategoriaRepository extends MongoRepository<Categoria, String> 
     Categoria findByIdString(String idString);
     List<Categoria> findByNombreContainingIgnoreCase(String nombre);
     Page<Categoria> findByNombreContainingIgnoreCase(String nombre, Pageable p);
-}
+    List<Categoria> findByTallerId(String tallerId);
+    Page<Categoria> findByTallerId(String tallerId, Pageable p);
+    Page<Categoria> findByTallerIdIsNull(Pageable p); // global categories
+ }
