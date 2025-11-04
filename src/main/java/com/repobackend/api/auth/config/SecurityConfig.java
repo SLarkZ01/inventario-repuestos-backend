@@ -61,6 +61,16 @@ public class SecurityConfig {
             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**").permitAll()
             // Public product/catalog endpoints: permitir vista sin autenticación
             .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/**").permitAll()
+            // Public categories listing/details
+            .requestMatchers(HttpMethod.GET, "/api/categorias", "/api/categorias/**").permitAll()
+            // Protect modifications to products: ADMIN or VENDEDOR
+            .requestMatchers(HttpMethod.POST, "/api/productos/**").hasAnyRole("ADMIN","VENDEDOR")
+            .requestMatchers(HttpMethod.PUT, "/api/productos/**").hasAnyRole("ADMIN","VENDEDOR")
+            .requestMatchers(HttpMethod.DELETE, "/api/productos/**").hasAnyRole("ADMIN","VENDEDOR")
+            // Protect modifications to categories: ADMIN or VENDEDOR
+            .requestMatchers(HttpMethod.POST, "/api/categorias/**").hasAnyRole("ADMIN","VENDEDOR")
+            .requestMatchers(HttpMethod.PUT, "/api/categorias/**").hasAnyRole("ADMIN","VENDEDOR")
+            .requestMatchers(HttpMethod.DELETE, "/api/categorias/**").hasAnyRole("ADMIN","VENDEDOR")
             // Permitir ver stock públicamente para que clientes no autenticados puedan ver disponibilidad/precio
             .requestMatchers(HttpMethod.GET, "/api/stock").permitAll()
             // Secure these auth endpoints
