@@ -120,8 +120,9 @@ public class FacturaService {
                 int available = row.getCantidad() == null ? 0 : row.getCantidad();
                 if (available <= 0) continue;
                 int take = Math.min(available, remaining);
-                // ajustar stock en ese almacén (delta negativo)
-                var res = stockService.adjustStock(productoId, row.getAlmacenId(), -take, realizadoPor);
+                // ajustar stock en ese almacén (delta negativo) SIN validar permisos de taller
+                // porque el checkout es una operación pública donde cualquier cliente puede comprar
+                var res = stockService.adjustStock(productoId, row.getAlmacenId(), -take, realizadoPor, false);
                 if (res.containsKey("error")) {
                     throw new IllegalStateException("Error ajustando stock en almacen " + row.getAlmacenId() + ": " + res.get("error"));
                 }

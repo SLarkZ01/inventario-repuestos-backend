@@ -30,7 +30,12 @@ public class CategoriaService {
     @CacheEvict(value = "categoriasGlobales", allEntries = true)
     public Map<String, Object> crearCategoria(Map<String, Object> body) {
         Categoria c = new Categoria();
-        c.setIdString((String) body.get("id"));
+        // Generate idString if not provided
+        String idString = (String) body.get("id");
+        if (idString == null || idString.trim().isEmpty()) {
+            idString = java.util.UUID.randomUUID().toString();
+        }
+        c.setIdString(idString);
         c.setNombre((String) body.get("nombre"));
         c.setDescripcion((String) body.getOrDefault("descripcion", null));
         Number icono = (Number) body.getOrDefault("iconoRecurso", null);
@@ -40,7 +45,6 @@ public class CategoriaService {
         if (body.containsKey("mappedGlobalCategoryId")) c.setMappedGlobalCategoryId((String) body.get("mappedGlobalCategoryId"));
         c.setCreadoEn(new Date());
         // Authorization: if local category (has tallerId) require membership; if global (no tallerId) require admin
-        java.security.Principal principal = null;
         org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         String caller = auth == null ? null : auth.getName();
         String tId = c.getTallerId();
@@ -62,6 +66,10 @@ public class CategoriaService {
     @CacheEvict(value = "categoriasGlobales", allEntries = true)
     public Map<String, Object> crearCategoria(CategoriaRequest req) {
         Categoria c = toEntity(req);
+        // Generate idString if not provided
+        if (c.getIdString() == null || c.getIdString().trim().isEmpty()) {
+            c.setIdString(java.util.UUID.randomUUID().toString());
+        }
         c.setCreadoEn(new Date());
         org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         String caller = auth == null ? null : auth.getName();
@@ -112,6 +120,17 @@ public class CategoriaService {
         java.util.List<CategoriaResponse> items = p.getContent().stream().map(this::toResponse).toList();
         return Map.of("categorias", items, "total", p.getTotalElements(), "page", page, "size", size);
     }
+    
+    // Listar TODAS las categorías (globales + talleres)
+    public Map<String,Object> listarTodasLasCategorias(int page, int size) {
+        if (page < 0) page = 0;
+        if (size <= 0) size = 20;
+        org.springframework.data.domain.Pageable pg = org.springframework.data.domain.PageRequest.of(page, size);
+        org.springframework.data.domain.Page<Categoria> p = categoriaRepository.findAll(pg);
+        java.util.List<CategoriaResponse> items = p.getContent().stream().map(this::toResponse).toList();
+        return Map.of("categorias", items, "total", p.getTotalElements(), "page", page, "size", size);
+    }
+    
     // Listar categorías de un taller
     public Map<String,Object> listarCategoriasPorTaller(String tallerId, int page, int size) {
         if (tallerId == null) return Map.of("categorias", java.util.List.of());

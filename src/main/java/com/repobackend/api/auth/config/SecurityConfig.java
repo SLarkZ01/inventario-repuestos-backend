@@ -52,6 +52,12 @@ public class SecurityConfig {
         http.sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.authorizeHttpRequests(auth -> auth
+            // ====== CRITICAL: Public anonymous endpoints FIRST ======
+            // Public carrito endpoints: permitir carritos anónimos - TODAS LAS OPERACIONES (sin restricción de método)
+            .requestMatchers("/api/carritos", "/api/carritos/**").permitAll()
+            // Public favoritos endpoints: permitir favoritos anónimos
+            .requestMatchers("/api/favoritos", "/api/favoritos/**").permitAll()
+            // ====== Auth endpoints ======
             // Public auth endpoints
             .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh", "/api/auth/logout").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/auth/oauth/google").permitAll()
@@ -73,6 +79,9 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.DELETE, "/api/categorias/**").hasAnyRole("ADMIN","VENDEDOR")
             // Permitir ver stock públicamente para que clientes no autenticados puedan ver disponibilidad/precio
             .requestMatchers(HttpMethod.GET, "/api/stock").permitAll()
+            // Facturas: Solo usuarios autenticados pueden crear y consultar facturas
+            .requestMatchers(HttpMethod.POST, "/api/facturas/checkout").authenticated()
+            .requestMatchers(HttpMethod.GET, "/api/facturas", "/api/facturas/**").authenticated()
             // Secure these auth endpoints
             .requestMatchers("/api/auth/me", "/api/auth/revoke-all").authenticated()
             // Admin-only endpoints (other admin routes)

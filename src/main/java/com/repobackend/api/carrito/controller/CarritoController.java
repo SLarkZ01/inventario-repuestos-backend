@@ -162,13 +162,17 @@ public class CarritoController {
     )
     @PostMapping("/{id}/items")
     public ResponseEntity<?> addItem(@PathVariable String id, @Valid @RequestBody CarritoItemRequest body, Authentication authentication) {
+        // Permitir carritos anónimos: userId puede ser null
         String userId = authentication == null ? null : authentication.getName();
-        if (userId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
         var maybe = carritoService.getById(id);
         if (maybe.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Carrito no encontrado"));
         var carrito = maybe.get();
         String ownerId = carrito.getUsuarioId() == null ? null : carrito.getUsuarioId().toHexString();
-        if (ownerId == null || !ownerId.equals(userId)) return ResponseEntity.status(403).body(Map.of("error", "No tienes permisos para modificar este carrito"));
+        // Si el carrito tiene dueño Y el usuario actual no es el dueño -> 403
+        if (ownerId != null && !ownerId.equals(userId)) {
+            return ResponseEntity.status(403).body(Map.of("error", "No tienes permisos para modificar este carrito"));
+        }
+        // Permitir modificar si: 1) carrito anónimo (ownerId==null), o 2) usuario es el dueño
         var r = carritoService.addItem(id, body);
         if (r.containsKey("error")) return ResponseEntity.status(400).body(r);
         return ResponseEntity.ok(r);
@@ -178,13 +182,17 @@ public class CarritoController {
         responses = {@ApiResponse(responseCode = "200", description = "Item removido", content = @Content)})
     @DeleteMapping("/{id}/items/{productoId}")
     public ResponseEntity<?> removeItem(@PathVariable String id, @PathVariable String productoId, Authentication authentication) {
+        // Permitir carritos anónimos: userId puede ser null
         String userId = authentication == null ? null : authentication.getName();
-        if (userId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
         var maybe = carritoService.getById(id);
         if (maybe.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Carrito no encontrado"));
         var carrito = maybe.get();
         String ownerId = carrito.getUsuarioId() == null ? null : carrito.getUsuarioId().toHexString();
-        if (ownerId == null || !ownerId.equals(userId)) return ResponseEntity.status(403).body(Map.of("error", "No tienes permisos para modificar este carrito"));
+        // Si el carrito tiene dueño Y el usuario actual no es el dueño -> 403
+        if (ownerId != null && !ownerId.equals(userId)) {
+            return ResponseEntity.status(403).body(Map.of("error", "No tienes permisos para modificar este carrito"));
+        }
+        // Permitir modificar si: 1) carrito anónimo (ownerId==null), o 2) usuario es el dueño
         var r = carritoService.removeItem(id, productoId);
         if (r.containsKey("error")) return ResponseEntity.status(400).body(r);
         return ResponseEntity.ok(r);

@@ -87,11 +87,16 @@ public class CategoriaController {
                                     @RequestParam(required = false, defaultValue = "0") int page,
                                     @RequestParam(required = false, defaultValue = "20") int size,
                                     @RequestParam(required = false) String tallerId,
-                                    @RequestParam(required = false, defaultValue = "false") boolean global) {
+                                    @RequestParam(required = false, defaultValue = "false") boolean global,
+                                    @RequestParam(required = false, defaultValue = "false") boolean todas) {
         // if search term present, use paginated search across both global and local
         if (q != null && !q.isBlank()) {
             var res = categoriaService.buscarPorNombrePaginado(q, page, size);
             return ResponseEntity.ok(res);
+        }
+        // NEW: if todas=true, return all categories (global + taller)
+        if (todas) {
+            return ResponseEntity.ok(categoriaService.listarTodasLasCategorias(page, size));
         }
         if (global) {
             return ResponseEntity.ok(categoriaService.listarCategoriasGlobales(page, size));

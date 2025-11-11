@@ -56,10 +56,18 @@ public class StockService {
      * Además registra un Movimiento de tipo entrada/salida con quien realizó la acción (realizadoPorUserId).
      */
     public Map<String, Object> adjustStock(String productoId, String almacenId, int delta, String realizadoPorUserId) {
+        return adjustStock(productoId, almacenId, delta, realizadoPorUserId, true);
+    }
+    
+    /**
+     * Ajusta el stock con opción de omitir validación de permisos.
+     * @param skipPermissionCheck Si es true, NO valida permisos de taller (usado para checkout automático)
+     */
+    public Map<String, Object> adjustStock(String productoId, String almacenId, int delta, String realizadoPorUserId, boolean validatePermissions) {
         if (productoId == null || almacenId == null) return Map.of("error", "productoId y almacenId son requeridos");
 
-        // Si la acción viene de un usuario autenticado, validar que tenga permiso en el taller correspondiente
-        if (realizadoPorUserId != null) {
+        // Validar permisos SOLO si se solicita y hay usuario
+        if (validatePermissions && realizadoPorUserId != null) {
             Optional<Almacen> mayAl = tallerService.findAlmacenById(almacenId);
             if (mayAl.isEmpty()) return Map.of("error", "Almacen no encontrado");
             String tallerId = mayAl.get().getTallerId();
