@@ -884,6 +884,12 @@ paths:
           type: boolean
           default: false
         example: false
+      - name: todas
+        in: query
+        required: false
+        schema:
+          type: boolean
+          default: false
       responses:
         '200':
           description: Lista de categorías
