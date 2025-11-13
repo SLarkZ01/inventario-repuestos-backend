@@ -38,6 +38,152 @@ tags:
 - name: Movimientos
   description: Registro de entradas y salidas de stock
 paths:
+  /api/talleres/{tallerId}:
+    get:
+      tags:
+      - Talleres
+      summary: Obtener taller
+      description: Obtiene información del taller por id
+      operationId: getTaller
+      parameters:
+      - name: tallerId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Taller encontrado
+        '404':
+          description: No encontrado
+    put:
+      tags:
+      - Talleres
+      summary: Actualizar taller
+      description: Actualiza datos del taller (solo nombre por ahora)
+      operationId: actualizarTaller
+      parameters:
+      - name: tallerId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: Datos a actualizar
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TallerRequest'
+            example:
+              nombre: Nuevo Nombre
+        required: true
+      responses:
+        '200':
+          description: Taller actualizado
+        '404':
+          description: No encontrado
+        '403':
+          description: Permisos insuficientes
+    delete:
+      tags:
+      - Talleres
+      summary: Eliminar (desactivar) taller
+      description: Marca el taller como inactivo. Solo el owner puede hacerlo.
+      operationId: eliminarTaller
+      parameters:
+      - name: tallerId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Taller desactivado
+        '403':
+          description: Permisos insuficientes
+        '404':
+          description: No encontrado
+  /api/talleres/{tallerId}/almacenes/{almacenId}:
+    get:
+      tags:
+      - Talleres
+      summary: Obtener almacén
+      description: Obtiene un almacén por id
+      operationId: getAlmacen
+      parameters:
+      - name: tallerId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: almacenId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Almacén encontrado
+        '404':
+          description: No encontrado
+    put:
+      tags:
+      - Talleres
+      summary: Actualizar almacén
+      description: Actualiza un almacén (nombre/ubicacion). Requiere owner o ADMIN.
+      operationId: actualizarAlmacen
+      parameters:
+      - name: tallerId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: almacenId
+        in: path
+        required: true
+        schema:
+          type: string
+      requestBody:
+        description: Datos de almacén
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlmacenRequest'
+            example:
+              nombre: Almacén Nuevo
+              ubicacion: Calle 1
+        required: true
+      responses:
+        '200':
+          description: Almacén actualizado
+        '403':
+          description: Permisos insuficientes
+        '404':
+          description: No encontrado
+    delete:
+      tags:
+      - Talleres
+      summary: Eliminar (desactivar) almacén
+      description: Marca un almacén como inactivo. Requiere owner o ADMIN.
+      operationId: eliminarAlmacen
+      parameters:
+      - name: tallerId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: almacenId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Almacén desactivado
+        '403':
+          description: Permisos insuficientes
+        '404':
+          description: No encontrado
   /api/stock/set:
     put:
       tags:
@@ -233,9 +379,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              additionalProperties:
-                type: string
+              $ref: '#/components/schemas/TallerRequest'
             examples:
               Nuevo taller:
                 description: Nuevo taller
@@ -381,6 +525,23 @@ paths:
         '401':
           description: Usuario no autenticado
   /api/talleres/{tallerId}/almacenes:
+    get:
+      tags:
+      - Talleres
+      summary: Listar almacenes de un taller
+      description: Devuelve los almacenes asociados a un taller
+      operationId: listarAlmacenes
+      parameters:
+      - name: tallerId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Lista de almacenes
+        '404':
+          description: Taller no encontrado
     post:
       tags:
       - Talleres
@@ -1612,6 +1773,22 @@ paths:
           description: Item removido
 components:
   schemas:
+    TallerRequest:
+      required:
+      - nombre
+      type: object
+      properties:
+        nombre:
+          type: string
+    AlmacenRequest:
+      required:
+      - nombre
+      type: object
+      properties:
+        nombre:
+          type: string
+        ubicacion:
+          type: string
     ProductoRequest:
       required:
       - nombre
