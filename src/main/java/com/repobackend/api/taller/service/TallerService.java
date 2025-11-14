@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
@@ -21,7 +23,8 @@ import com.repobackend.api.taller.repository.InvitationRepository;
 import com.repobackend.api.taller.repository.TallerRepository;
 
 @Service
-public class TallerService {
+public class TallerService implements ITallerService {
+    private static final Logger logger = LoggerFactory.getLogger(TallerService.class);
     private final TallerRepository tallerRepository;
     private final AlmacenRepository almacenRepository;
     private final InvitationRepository invitationRepository;
@@ -54,6 +57,32 @@ public class TallerService {
 
     public java.util.List<Taller> getTalleresByOwner(String ownerId) {
         return tallerRepository.findByOwnerId(ownerId);
+    }
+
+    public java.util.List<Taller> getTalleresForUser(String userId) {
+        if (userId == null) return java.util.List.of();
+        // obtener talleres donde es owner
+        var byOwner = tallerRepository.findByOwnerId(userId);
+        // obtener talleres donde es miembro (consulta por campo anidado)
+        var byMiembro = tallerRepository.findByMiembrosUserId(userId);
+        int ownerCount = byOwner == null ? 0 : byOwner.size();
+        int miembroCount = byMiembro == null ? 0 : byMiembro.size();
+        logger.info("getTalleresForUser: ownerCount={}, miembroCount={} for user={}", ownerCount, miembroCount, userId);
+        var res = new java.util.ArrayList<Taller>();
+        var seen = new java.util.HashSet<String>();
+        if (byOwner != null) {
+            for (Taller t : byOwner) { res.add(t); if (t.getId() != null) seen.add(t.getId()); }
+        }
+        if (byMiembro != null) {
+            for (Taller t : byMiembro) {
+                if (t.getId() == null || !seen.contains(t.getId())) {
+                    res.add(t);
+                    if (t.getId() != null) seen.add(t.getId());
+                }
+            }
+        }
+        logger.info("getTalleresForUser: returning {} talleres for user={}", res.size(), userId);
+        return res;
     }
 
     public Map<String, Object> crearAlmacen(String userId, String tallerId, String nombre, String ubicacion) {
@@ -249,5 +278,108 @@ public class TallerService {
         if (t.getOwnerId() != null && t.getOwnerId().equals(userId)) return true;
         if (t.getMiembros() == null) return false;
         return t.getMiembros().stream().anyMatch(m -> userId.equals(String.valueOf(m.get("userId"))) && ((java.util.List<String>) m.get("roles")).stream().anyMatch(allowedRoles::contains));
+    }
+
+    // --- Nuevos métodos: getTallerById, actualizarTaller, deleteTaller, listAlmacenesByTaller, updateAlmacen, deleteAlmacen ---
+
+    public Optional<Taller> getTallerById(String tallerId) {
+        return tallerRepository.findById(tallerId);
+    }
+
+    public Map<String, Object> actualizarTaller(String callerId, String tallerId, String nuevoNombre) {
+        Optional<Taller> maybe = tallerRepository.findById(tallerId);
+        if (maybe.isEmpty()) return Map.of("error", "Taller no encontrado", "status", 404);
+        Taller t = maybe.get();
+        if (!t.getOwnerId().equals(callerId) && !isUserMemberWithAnyRole(callerId, tallerId, java.util.List.of("ADMIN"))) {
+            return Map.of("error", "Permisos insuficientes", "status", 403);
+        }
+        t.setNombre(nuevoNombre);
+        tallerRepository.save(t);
+        return Map.of("taller", t);
+    }
+
+    public Map<String, Object> deleteTaller(String callerId, String tallerId) {
+        Optional<Taller> maybe = tallerRepository.findById(tallerId);
+        if (maybe.isEmpty()) return Map.of("error", "Taller no encontrado", "status", 404);
+        Taller t = maybe.get();
+        if (!t.getOwnerId().equals(callerId)) return Map.of("error", "Solo el owner puede eliminar el taller", "status", 403);
+
+        // Eliminar todos los almacenes asociados al taller
+        var almacenes = t.getAlmacenes();
+        if (almacenes != null && !almacenes.isEmpty()) {
+            for (String almacenId : almacenes) {
+                almacenRepository.deleteById(almacenId);
+            }
+        }
+
+        // Eliminar el taller completamente
+        tallerRepository.deleteById(tallerId);
+        logger.info("Taller eliminado completamente: id={} owner={}", tallerId, callerId);
+        return Map.of("success", true);
+    }
+
+    public Map<String, Object> listAlmacenesByTaller(String tallerId) {
+        Optional<Taller> maybe = tallerRepository.findById(tallerId);
+        if (maybe.isEmpty()) return Map.of("error", "Taller no encontrado");
+        var almacenes = almacenRepository.findByTallerId(tallerId);
+        return Map.of("almacenes", almacenes);
+    }
+
+    public Map<String, Object> updateAlmacen(String callerId, String tallerId, String almacenId, String nombre, String ubicacion) {
+        Optional<Almacen> maybe = almacenRepository.findById(almacenId);
+        if (maybe.isEmpty()) return Map.of("error", "Almacén no encontrado", "status", 404);
+        Almacen a = maybe.get();
+        if (!a.getTallerId().equals(tallerId)) return Map.of("error", "Almacén no pertenece a ese taller", "status", 400);
+        if (!isUserMemberWithAnyRole(callerId, tallerId, java.util.List.of("ADMIN"))) return Map.of("error", "Permisos insuficientes", "status", 403);
+        if (nombre != null && !nombre.isBlank()) a.setNombre(nombre);
+        if (ubicacion != null) a.setUbicacion(ubicacion);
+        almacenRepository.save(a);
+        return Map.of("almacen", a);
+    }
+
+    public Map<String, Object> deleteAlmacen(String callerId, String tallerId, String almacenId) {
+        Optional<Almacen> maybe = almacenRepository.findById(almacenId);
+        if (maybe.isEmpty()) return Map.of("error", "Almacén no encontrado", "status", 404);
+        Almacen a = maybe.get();
+        if (!a.getTallerId().equals(tallerId)) return Map.of("error", "Almacén no pertenece a ese taller", "status", 400);
+        if (!isUserMemberWithAnyRole(callerId, tallerId, java.util.List.of("ADMIN"))) return Map.of("error", "Permisos insuficientes", "status", 403);
+
+        // Eliminar completamente el almacén
+        almacenRepository.deleteById(almacenId);
+        logger.info("Almacén eliminado completamente: id={} tallerId={}", almacenId, tallerId);
+
+        // Remover la referencia del taller
+        Optional<Taller> tMaybe = tallerRepository.findById(tallerId);
+        if (tMaybe.isPresent()) {
+            Taller t = tMaybe.get();
+            var almacenes = t.getAlmacenes();
+            if (almacenes != null) {
+                almacenes.removeIf(id -> id.equals(almacenId));
+                t.setAlmacenes(almacenes);
+                tallerRepository.save(t);
+            }
+        }
+        return Map.of("success", true);
+    }
+
+    // NEW: listar miembros
+    public Map<String, Object> listMembers(String tallerId) {
+        Optional<Taller> maybe = tallerRepository.findById(tallerId);
+        if (maybe.isEmpty()) return Map.of("error", "Taller no encontrado", "status", 404);
+        Taller t = maybe.get();
+        var miembros = t.getMiembros();
+        if (miembros == null) miembros = new java.util.ArrayList<>();
+        return Map.of("miembros", miembros);
+    }
+
+    public boolean isUserMember(String userId, String tallerId) {
+        if (userId == null || tallerId == null) return false;
+        Optional<Taller> maybe = tallerRepository.findById(tallerId);
+        if (maybe.isEmpty()) return false;
+        Taller t = maybe.get();
+        if (t.getOwnerId() != null && t.getOwnerId().equals(userId)) return true;
+        var miembros = t.getMiembros();
+        if (miembros == null) return false;
+        return miembros.stream().anyMatch(m -> userId.equals(String.valueOf(m.get("userId"))));
     }
 }

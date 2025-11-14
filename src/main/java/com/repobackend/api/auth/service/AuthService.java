@@ -12,6 +12,9 @@ import com.repobackend.api.auth.dto.UserProfile;
 import com.repobackend.api.auth.exception.OAuthException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -39,6 +42,12 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final TallerService tallerService;
     private final OAuthService oauthService;
+
+    @Value("${app.jwt.expiration-ms:900000}")
+    private long jwtExpirationMs;
+
+    @Value("${app.refresh.expiration-ms:1209600000}")
+    private long refreshExpirationMs;
 
     public AuthService(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository, JwtUtil jwtUtil,
             TallerService tallerService, OAuthService oauthService) {
@@ -73,21 +82,28 @@ public class AuthService {
             joined = tallerService.acceptInvitationByCode(u.getId(), req.inviteCode);
         }
         // generate tokens
-        String accessToken = jwtUtil.generateToken(u.getId(), SecurityConstants.JWT_EXPIRATION_MS);
+        String accessToken = jwtUtil.generateToken(u.getId(), jwtExpirationMs);
         String rawRefresh = java.util.UUID.randomUUID() + "-" + System.currentTimeMillis();
         String refreshHash = sha256(rawRefresh);
         RefreshToken rt = new RefreshToken();
         rt.setUserId(u.getId());
         rt.setTokenHash(refreshHash);
         rt.setIssuedAt(new Date());
-        rt.setExpiresAt(new Date(System.currentTimeMillis() + SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
+        rt.setExpiresAt(new Date(System.currentTimeMillis() + refreshExpirationMs));
         refreshTokenRepository.save(rt);
+        // set refresh token as HttpOnly cookie
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", rawRefresh)
+                .httpOnly(true)
+                .secure(false) // set true in production with HTTPS
+                .path("/")
+                .maxAge(refreshExpirationMs / 1000)
+                .sameSite("Lax")
+                .build();
         var resp = new java.util.HashMap<String, Object>();
         resp.put("accessToken", accessToken);
-        resp.put("refreshToken", rawRefresh);
         resp.put("user", u);
         if (joined != null) resp.put("joined", joined);
-        return ResponseEntity.status(HttpStatus.CREATED).body(resp);
+        return ResponseEntity.status(HttpStatus.CREATED).header(HttpHeaders.SET_COOKIE, cookie.toString()).body(resp);
     }
 
 
@@ -108,7 +124,7 @@ public class AuthService {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales inválidas");
         }
         // Generate JWT access token and a random refresh token
-        String accessToken = jwtUtil.generateToken(u.getId(), SecurityConstants.JWT_EXPIRATION_MS);
+        String accessToken = jwtUtil.generateToken(u.getId(), jwtExpirationMs);
         String rawRefresh = java.util.UUID.randomUUID() + "-" + System.currentTimeMillis();
 
         String refreshHash = sha256(rawRefresh);
@@ -116,13 +132,20 @@ public class AuthService {
         rt.setUserId(u.getId());
         rt.setTokenHash(refreshHash);
         rt.setIssuedAt(new Date());
-        rt.setExpiresAt(new Date(System.currentTimeMillis() + SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
+        rt.setExpiresAt(new Date(System.currentTimeMillis() + refreshExpirationMs));
         rt.setDeviceInfo(req.device);
         refreshTokenRepository.save(rt);
 
-        return ResponseEntity.ok(new java.util.HashMap<String, Object>() {{
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", rawRefresh)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(refreshExpirationMs / 1000)
+                .sameSite("Lax")
+                .build();
+
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body(new java.util.HashMap<String, Object>() {{
             put("accessToken", accessToken);
-            put("refreshToken", rawRefresh);
             put("user", u);
         }});
     }
@@ -138,7 +161,16 @@ public class AuthService {
     }
 
     public ResponseEntity<?> refresh(String refreshToken, HttpServletRequest request) {
-        String h = sha256(refreshToken);
+        // If refreshToken param is null, try to read from cookie header
+        String token = refreshToken;
+        if ((token == null || token.isBlank()) && request != null) {
+            jakarta.servlet.http.Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (var c : cookies) if ("refreshToken".equals(c.getName())) { token = c.getValue(); break; }
+            }
+        }
+        if (token == null || token.isBlank()) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("refresh token inválido");
+        String h = sha256(token);
         Optional<RefreshToken> maybe = refreshTokenRepository.findByTokenHash(h);
         if (maybe.isEmpty()) {
             String ip = request == null ? "-" : request.getRemoteAddr();
@@ -151,19 +183,48 @@ public class AuthService {
             logger.warn("Refresh token expired or revoked for userId={}", rt.getUserId());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("refresh token expirado o fue revocado");
         }
-        String newAccess = jwtUtil.generateToken(rt.getUserId(), SecurityConstants.JWT_EXPIRATION_MS);
-        return ResponseEntity.ok(new java.util.HashMap<String, Object>() {{ put("accessToken", newAccess); }});
+        // Rotate: revoke current token and create new one
+        rt.setRevoked(true);
+        refreshTokenRepository.save(rt);
+        String newRaw = java.util.UUID.randomUUID() + "-" + System.currentTimeMillis();
+        String newHash = sha256(newRaw);
+        RefreshToken newRt = new RefreshToken();
+        newRt.setUserId(rt.getUserId());
+        newRt.setTokenHash(newHash);
+        newRt.setIssuedAt(new Date());
+        newRt.setExpiresAt(new Date(System.currentTimeMillis() + refreshExpirationMs));
+        newRt.setDeviceInfo(rt.getDeviceInfo());
+        refreshTokenRepository.save(newRt);
+
+        String newAccess = jwtUtil.generateToken(rt.getUserId(), jwtExpirationMs);
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", newRaw)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(refreshExpirationMs / 1000)
+                .sameSite("Lax")
+                .build();
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body(new java.util.HashMap<String, Object>() {{ put("accessToken", newAccess); }});
     }
 
     public ResponseEntity<?> logout(String refreshToken) {
-        String h = sha256(refreshToken);
+        // try to revoke token by param or cookie
+        String token = refreshToken;
+        // Note: caller should clear cookie in frontend as well; we will instruct to call /auth/logout with credentials include
+        if (token == null || token.isBlank()) {
+            // no token provided; still return OK but advise client to clear cookie
+            ResponseCookie clear = ResponseCookie.from("refreshToken", "").httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax").build();
+            return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, clear.toString()).build();
+        }
+        String h = sha256(token);
         Optional<RefreshToken> maybe = refreshTokenRepository.findByTokenHash(h);
         if (maybe.isPresent()) {
             RefreshToken rt = maybe.get();
             rt.setRevoked(true);
             refreshTokenRepository.save(rt);
         }
-        return ResponseEntity.ok().build();
+        ResponseCookie clear = ResponseCookie.from("refreshToken", "").httpOnly(true).secure(false).path("/").maxAge(0).sameSite("Lax").build();
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, clear.toString()).build();
     }
 
     // Revoke all refresh tokens for the user identified by the provided access token (JWT)
@@ -331,21 +392,27 @@ public class AuthService {
         if (inviteCode != null && !inviteCode.isBlank()) {
             joined = tallerService.acceptInvitationByCode(u.getId(), inviteCode);
         }
-        String accessToken = jwtUtil.generateToken(u.getId(), SecurityConstants.JWT_EXPIRATION_MS);
+        String accessToken = jwtUtil.generateToken(u.getId(), jwtExpirationMs);
         String rawRefresh = java.util.UUID.randomUUID() + "-" + System.currentTimeMillis();
         String refreshHash = sha256(rawRefresh);
         RefreshToken rt = new RefreshToken();
         rt.setUserId(u.getId());
         rt.setTokenHash(refreshHash);
         rt.setIssuedAt(new Date());
-        rt.setExpiresAt(new Date(System.currentTimeMillis() + SecurityConstants.REFRESH_TOKEN_EXPIRATION_MS));
+        rt.setExpiresAt(new Date(System.currentTimeMillis() + refreshExpirationMs));
         rt.setDeviceInfo(device);
         refreshTokenRepository.save(rt);
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", rawRefresh)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(refreshExpirationMs / 1000)
+                .sameSite("Lax")
+                .build();
         var resp = new java.util.HashMap<String, Object>();
         resp.put("accessToken", accessToken);
-        resp.put("refreshToken", rawRefresh);
         resp.put("user", u);
         if (joined != null) resp.put("joined", joined);
-        return ResponseEntity.ok(resp);
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, cookie.toString()).body(resp);
     }
-}
+ }

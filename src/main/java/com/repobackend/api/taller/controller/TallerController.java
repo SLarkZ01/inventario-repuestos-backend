@@ -2,17 +2,25 @@ package com.repobackend.api.taller.controller;
 
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.repobackend.api.taller.service.TallerService;
+import com.repobackend.api.taller.service.ITallerService;
+import com.repobackend.api.taller.dto.TallerRequest;
+import com.repobackend.api.taller.dto.AlmacenRequest;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 // OpenAPI
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -25,14 +33,14 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 @RequestMapping("/api/talleres")
 @Tag(name = "Talleres", description = "Administración de talleres, almacenes e invitaciones")
 public class TallerController {
-    private final TallerService tallerService;
+    private static final Logger logger = LoggerFactory.getLogger(TallerController.class);
+    private final ITallerService tallerService;
 
-    public TallerController(TallerService tallerService) {
+    public TallerController(ITallerService tallerService) {
         this.tallerService = tallerService;
     }
 
-    @Operation(
-        summary = "Crear taller",
+    @Operation(summary = "Crear taller",
         description = "Crea un taller y lo asocia al usuario autenticado como propietario (owner)",
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = "Datos del taller",
@@ -54,11 +62,13 @@ public class TallerController {
         }
     )
     @PostMapping
-    public ResponseEntity<?> crearTaller(@RequestBody Map<String, String> body, HttpServletRequest req) {
-        String nombre = body.get("nombre");
+    public ResponseEntity<?> crearTaller(@Valid @RequestBody TallerRequest body, HttpServletRequest req) {
+        String nombre = body.getNombre();
         String userId = req.getUserPrincipal() == null ? null : req.getUserPrincipal().getName();
+        logger.info("Enviando datos del taller: principal='{}' nombre='{}'", userId, nombre);
         if (userId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
         Map<String, Object> r = tallerService.crearTaller(userId, nombre);
+        logger.info("Resultado crearTaller para user={}: {}", userId, r);
         if (r.containsKey("error")) return ResponseEntity.badRequest().body(r);
         return ResponseEntity.status(201).body(r);
     }
@@ -180,7 +190,153 @@ public class TallerController {
     @GetMapping
     public ResponseEntity<?> listMyTalleres(HttpServletRequest req) {
         String userId = req.getUserPrincipal() == null ? null : req.getUserPrincipal().getName();
+        logger.info("Solicitud GET /api/talleres desde principal='{}'", userId);
         if (userId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
-        return ResponseEntity.ok(Map.of("talleres", tallerService.getTalleresByOwner(userId)));
+        var list = tallerService.getTalleresForUser(userId);
+        logger.info("Datos de talleres recibidos para user='{}': count={}", userId, list == null ? 0 : list.size());
+        return ResponseEntity.ok(list);
+    }
+
+    @Operation(summary = "Obtener taller",
+        description = "Obtiene información del taller por id",
+        responses = {@ApiResponse(responseCode = "200", description = "Taller encontrado", content = @Content),
+            @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content)})
+    @GetMapping("/{tallerId}")
+    public ResponseEntity<?> getTaller(@PathVariable String tallerId) {
+        var maybe = tallerService.getTallerById(tallerId);
+        if (maybe.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Taller no encontrado"));
+        return ResponseEntity.ok(Map.of("taller", maybe.get()));
+    }
+
+    @Operation(summary = "Actualizar taller",
+        description = "Actualiza datos del taller (solo nombre por ahora)",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Datos a actualizar",
+            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"nombre\":\"Nuevo Nombre\"}"))
+        ),
+        responses = {@ApiResponse(responseCode = "200", description = "Taller actualizado", content = @Content),
+            @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Permisos insuficientes", content = @Content)})
+    @PutMapping("/{tallerId}")
+    public ResponseEntity<?> actualizarTaller(@PathVariable String tallerId, @Valid @RequestBody TallerRequest body, HttpServletRequest req) {
+        String callerId = req.getUserPrincipal() == null ? null : req.getUserPrincipal().getName();
+        if (callerId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
+        var r = tallerService.actualizarTaller(callerId, tallerId, body.getNombre());
+        if (r.containsKey("error")) {
+            int status = r.get("status") == null ? 400 : (int) r.get("status");
+            return ResponseEntity.status(status).body(r);
+        }
+        return ResponseEntity.ok(r);
+    }
+
+    @Operation(summary = "Eliminar taller",
+        description = "Elimina permanentemente el taller y todos sus almacenes asociados. Solo el owner puede hacerlo. Esta acción no se puede deshacer.",
+        responses = {@ApiResponse(responseCode = "200", description = "Taller eliminado", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Permisos insuficientes", content = @Content),
+            @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content)})
+    @DeleteMapping("/{tallerId}")
+    public ResponseEntity<?> eliminarTaller(@PathVariable String tallerId, HttpServletRequest req) {
+        String callerId = req.getUserPrincipal() == null ? null : req.getUserPrincipal().getName();
+        if (callerId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
+        var r = tallerService.deleteTaller(callerId, tallerId);
+        if (r.containsKey("error")) {
+            int status = r.get("status") == null ? 400 : (int) r.get("status");
+            return ResponseEntity.status(status).body(r);
+        }
+        return ResponseEntity.ok(r);
+    }
+
+    // Almacenes: listar por taller
+    @Operation(summary = "Listar almacenes de un taller",
+        description = "Devuelve los almacenes asociados a un taller",
+        responses = {@ApiResponse(responseCode = "200", description = "Lista de almacenes", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Taller no encontrado", content = @Content)})
+    @GetMapping("/{tallerId}/almacenes")
+    public ResponseEntity<?> listarAlmacenes(@PathVariable String tallerId) {
+        var r = tallerService.listAlmacenesByTaller(tallerId);
+        if (r.containsKey("error")) return ResponseEntity.status(404).body(r);
+        // Devolver directamente el array de almacenes (no envuelto en objeto)
+        return ResponseEntity.ok(r.get("almacenes"));
+    }
+
+    @Operation(summary = "Obtener almacén",
+        description = "Obtiene un almacén por id",
+        responses = {@ApiResponse(responseCode = "200", description = "Almacén encontrado", content = @Content),
+            @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content)})
+    @GetMapping("/{tallerId}/almacenes/{almacenId}")
+    public ResponseEntity<?> getAlmacen(@PathVariable String tallerId, @PathVariable String almacenId) {
+        var maybe = tallerService.findAlmacenById(almacenId);
+        if (maybe.isEmpty() || !maybe.get().getTallerId().equals(tallerId)) return ResponseEntity.status(404).body(Map.of("error", "Almacén no encontrado"));
+        return ResponseEntity.ok(Map.of("almacen", maybe.get()));
+    }
+
+    @Operation(summary = "Actualizar almacén",
+        description = "Actualiza un almacén (nombre/ubicacion). Requiere owner o ADMIN.",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Datos de almacén",
+            content = @Content(mediaType = "application/json", examples = @ExampleObject(value = "{\"nombre\":\"Almacén Nuevo\",\"ubicacion\":\"Calle 1\"}"))
+        ),
+        responses = {@ApiResponse(responseCode = "200", description = "Almacén actualizado", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Permisos insuficientes", content = @Content),
+            @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content)})
+    @PutMapping("/{tallerId}/almacenes/{almacenId}")
+    public ResponseEntity<?> actualizarAlmacen(@PathVariable String tallerId, @PathVariable String almacenId, @Valid @RequestBody AlmacenRequest body, HttpServletRequest req) {
+        String callerId = req.getUserPrincipal() == null ? null : req.getUserPrincipal().getName();
+        if (callerId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
+        var r = tallerService.updateAlmacen(callerId, tallerId, almacenId, body.getNombre(), body.getUbicacion());
+        if (r.containsKey("error")) {
+            int status = r.get("status") == null ? 400 : (int) r.get("status");
+            return ResponseEntity.status(status).body(r);
+        }
+        return ResponseEntity.ok(r);
+    }
+
+    @Operation(summary = "Eliminar almacén",
+        description = "Elimina permanentemente un almacén. Requiere owner o ADMIN. Esta acción no se puede deshacer.",
+        responses = {@ApiResponse(responseCode = "200", description = "Almacén eliminado", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Permisos insuficientes", content = @Content),
+            @ApiResponse(responseCode = "404", description = "No encontrado", content = @Content)})
+    @DeleteMapping("/{tallerId}/almacenes/{almacenId}")
+    public ResponseEntity<?> eliminarAlmacen(@PathVariable String tallerId, @PathVariable String almacenId, HttpServletRequest req) {
+        String callerId = req.getUserPrincipal() == null ? null : req.getUserPrincipal().getName();
+        if (callerId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
+        var r = tallerService.deleteAlmacen(callerId, tallerId, almacenId);
+        if (r.containsKey("error")) {
+            int status = r.get("status") == null ? 400 : (int) r.get("status");
+            return ResponseEntity.status(status).body(r);
+        }
+        return ResponseEntity.ok(r);
+    }
+
+    @Operation(summary = "Listar miembros del taller",
+        description = "Devuelve los miembros de un taller (userId, roles, joinedAt). Requiere que el usuario autenticado pertenezca al taller.",
+        responses = {@ApiResponse(responseCode = "200", description = "Lista de miembros", content = @Content),
+            @ApiResponse(responseCode = "401", description = "No autenticado", content = @Content),
+            @ApiResponse(responseCode = "403", description = "No eres miembro del taller", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Taller no encontrado", content = @Content)})
+    @GetMapping("/{tallerId}/miembros")
+    public ResponseEntity<?> listarMiembros(@PathVariable String tallerId, HttpServletRequest req) {
+        String callerId = req.getUserPrincipal() == null ? null : req.getUserPrincipal().getName();
+        if (callerId == null) return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
+        // verificar que el usuario pertenece al taller
+        if (!tallerService.isUserMember(callerId, tallerId)) return ResponseEntity.status(403).body(Map.of("error", "No eres miembro del taller"));
+        var r = tallerService.listMembers(tallerId);
+        if (r.containsKey("error")) {
+            int status = r.get("status") == null ? 404 : (int) r.get("status");
+            return ResponseEntity.status(status).body(r);
+        }
+        return ResponseEntity.ok(r);
+    }
+
+    @Operation(summary = "DEBUG: listar talleres por userId (temporal)", description = "Endpoint temporal para depuración: pasar ?userId=<id> para simular autenticación y devolver talleres para ese userId. Eliminar/proteger en producción.", responses = {@ApiResponse(responseCode = "200", description = "Debug info", content = @Content)})
+    @GetMapping("/_debug")
+    public ResponseEntity<?> debugListByUser(@RequestParam(required = false) String userId, HttpServletRequest req) {
+        // Si no se pasa userId, intentar tomar el principal
+        String principal = req.getUserPrincipal() == null ? null : req.getUserPrincipal().getName();
+        String effective = userId == null ? principal : userId;
+        if (effective == null) return ResponseEntity.ok(Map.of("error", "Necesitas pasar userId en query o estar autenticado"));
+        var list = tallerService.getTalleresForUser(effective);
+        logger.warn("DEBUG /api/talleres/_debug called. effectiveUser='{}' resultCount={}", effective, list == null ? 0 : list.size());
+        return ResponseEntity.ok(Map.of("effectiveUser", effective, "count", list == null ? 0 : list.size(), "talleres", list));
     }
 }
