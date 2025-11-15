@@ -87,8 +87,9 @@ paths:
     delete:
       tags:
       - Talleres
-      summary: Eliminar (desactivar) taller
-      description: Marca el taller como inactivo. Solo el owner puede hacerlo.
+      summary: Eliminar taller
+      description: Elimina permanentemente el taller y todos sus almacenes asociados.
+        Solo el owner puede hacerlo. Esta acción no se puede deshacer.
       operationId: eliminarTaller
       parameters:
       - name: tallerId
@@ -98,7 +99,7 @@ paths:
           type: string
       responses:
         '200':
-          description: Taller desactivado
+          description: Taller eliminado
         '403':
           description: Permisos insuficientes
         '404':
@@ -163,8 +164,9 @@ paths:
     delete:
       tags:
       - Talleres
-      summary: Eliminar (desactivar) almacén
-      description: Marca un almacén como inactivo. Requiere owner o ADMIN.
+      summary: Eliminar almacén
+      description: Elimina permanentemente un almacén. Requiere owner o ADMIN. Esta
+        acción no se puede deshacer.
       operationId: eliminarAlmacen
       parameters:
       - name: tallerId
@@ -179,7 +181,7 @@ paths:
           type: string
       responses:
         '200':
-          description: Almacén desactivado
+          description: Almacén eliminado
         '403':
           description: Permisos insuficientes
         '404':
@@ -1496,6 +1498,46 @@ paths:
                   stock: 110
         '404':
           description: Producto no encontrado
+  /api/talleres/{tallerId}/miembros:
+    get:
+      tags:
+      - Talleres
+      summary: Listar miembros del taller
+      description: Devuelve los miembros de un taller (userId, roles, joinedAt). Requiere
+        que el usuario autenticado pertenezca al taller.
+      operationId: listarMiembros
+      parameters:
+      - name: tallerId
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Lista de miembros
+        '401':
+          description: No autenticado
+        '403':
+          description: No eres miembro del taller
+        '404':
+          description: Taller no encontrado
+  /api/talleres/_debug:
+    get:
+      tags:
+      - Talleres
+      summary: 'DEBUG: listar talleres por userId (temporal)'
+      description: 'Endpoint temporal para depuración: pasar ?userId=<id> para simular
+        autenticación y devolver talleres para ese userId. Eliminar/proteger en producción.'
+      operationId: debugListByUser
+      parameters:
+      - name: userId
+        in: query
+        required: false
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Debug info
   /api/stock:
     get:
       tags:
