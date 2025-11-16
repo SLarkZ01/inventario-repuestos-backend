@@ -1630,6 +1630,33 @@ paths:
           description: Registro eliminado
         '404':
           description: No encontrado
+  /api/public/categorias:
+    get:
+      tags:
+      - public-categorias-controller
+      operationId: listarPublico
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+      - name: size
+        in: query
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
   /api/movimientos/{id}:
     get:
       tags:
