@@ -15,12 +15,6 @@ servers:
 security:
 - bearerAuth: []
 tags:
-- name: TallerMiembros
-  description: Operaciones sobre miembros de taller (promover, demover, remover)
-- name: Categorias
-  description: Gestión de categorías de productos
-- name: Stock
-  description: Operaciones para gestionar inventario por almacén
 - name: Facturas
   description: Creación y consulta de facturas
 - name: Auth
@@ -29,14 +23,24 @@ tags:
   description: Operaciones para gestionar productos favoritos del usuario
 - name: AdminUsers
   description: Creación de administradores
-- name: Productos
-  description: Operaciones para gestionar productos
 - name: Talleres
   description: Administración de talleres, almacenes e invitaciones
+- name: TallerMiembros
+  description: Operaciones sobre miembros de taller (promover, demover, remover)
+- name: Categorias
+  description: Gestión de categorías de productos
+- name: Stock
+  description: Operaciones para gestionar inventario por almacén
+- name: PublicCategoriasController
+  description: Endpoints públicos de categorías (sin autenticación)
+- name: Productos
+  description: Operaciones para gestionar productos
 - name: Carritos
   description: Operaciones sobre carritos de compra
 - name: Movimientos
   description: Registro de entradas y salidas de stock
+- name: PublicProductosController
+  description: Endpoints públicos de productos (sin autenticación)
 - name: Uploads
   description: Operaciones relacionadas con uploads a Cloudinary
 paths:
@@ -227,9 +231,23 @@ paths:
       tags:
       - Productos
       summary: Obtener producto por ID
-      description: Devuelve los detalles completos de un producto (incluye `listaMedios`
-        si existen)
-      operationId: getProducto
+      description: 'Devuelve los detalles completos de un producto.
+
+
+        **La respuesta incluye:**
+
+        - Datos básicos (nombre, descripción, precio, stock)
+
+        - `listaMedios`: Array con imágenes (cada una con publicId, secure_url, etc.)
+
+        - `specs`: Objeto con especificaciones técnicas (si existen)
+
+        - `tallerId`: ID del taller propietario (si existe)
+
+        - `categoriaId`: ID de la categoría (si existe)
+
+        '
+      operationId: getProducto_1
       parameters:
       - name: id
         in: path
@@ -247,20 +265,54 @@ paths:
                 producto:
                   id: 507f191e810c19729de860ea
                   nombre: Filtro de Aceite Yamaha
+                  descripcion: Filtro de aceite para motos Yamaha 150cc
                   precio: 25.5
                   stock: 100
                   categoriaId: 507f1f77bcf86cd799439011
+                  tallerId: 507f1f77bcf86cd799439777
                   listaMedios:
-                  - publicId: products/507f1f77/abc123
-                    secure_url: https://res.cloudinary.com/df7ggzasi/...
+                  - type: image/jpeg
+                    publicId: products/507f1f77/filtro-yamaha-abc123
+                    secure_url: https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg
+                    format: jpg
+                    width: 800
+                    height: 600
+                    order: 0
+                  specs:
+                    Marca: Yamaha
+                    Modelo: YZF-R15
+                    Compatibilidad: 150cc
+                    Material: Papel
+                    Peso: 0.2kg
         '404':
           description: Producto no encontrado
     put:
       tags:
       - Productos
       summary: Actualizar producto
-      description: Actualiza los datos del producto. Envía solo los campos que deseas
+      description: 'Actualiza los datos del producto. Envía solo los campos que deseas
         actualizar.
+
+
+        **IMPORTANTE sobre `listaMedios`:**
+
+        - Si actualizas `listaMedios`, DEBE incluir `publicId` en cada medio
+
+        - Al actualizar, se reemplazan las imágenes anteriores (las viejas se eliminan
+        de Cloudinary automáticamente)
+
+        - Para agregar nuevas imágenes manteniendo las existentes, primero obtén el
+        producto actual y agrega a su array
+
+
+        **Nota sobre `specs`:**
+
+        - Al actualizar `specs`, se reemplaza el objeto completo (no se hace merge)
+
+        - Para actualizar una sola especificación, envía el objeto completo con el
+        cambio
+
+        '
       operationId: actualizarProducto
       parameters:
       - name: id
@@ -271,15 +323,32 @@ paths:
           type: string
         example: 507f191e810c19729de860ea
       requestBody:
-        description: Datos actualizados del producto
+        description: 'Datos actualizados del producto (solo enviar los campos a modificar).
+
+          Si actualizas `listaMedios`, DEBE incluir `publicId` en cada elemento.
+
+          '
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ProductoRequest'
-            example:
-              nombre: Filtro de Aceite Yamaha R15
-              precio: 27.0
-              stock: 150
+            examples:
+              Actualizar datos básicos:
+                description: Actualizar datos básicos
+                value:
+                  nombre: Filtro de Aceite Yamaha R15
+                  precio: 27.0
+                  stock: 150
+              Actualizar con nueva imagen:
+                description: Actualizar con nueva imagen
+                value:
+                  nombre: Filtro de Aceite Yamaha R15
+                  listaMedios:
+                  - type: image/jpeg
+                    publicId: products/nuevo-filtro-xyz789
+                    secure_url: https://res.cloudinary.com/df7ggzasi/image/upload/v1763285500/products/nuevo-filtro-xyz789.jpg
+                    format: jpg
+                    order: 0
         required: true
       responses:
         '200':
@@ -293,6 +362,8 @@ paths:
                   precio: 27.0
         '404':
           description: Producto no encontrado
+        '400':
+          description: Datos inválidos
     delete:
       tags:
       - Productos
@@ -323,57 +394,185 @@ paths:
     get:
       tags:
       - Categorias
-      summary: Obtener categoría
-      operationId: getCategoria
+      summary: Obtener categoría por ID
+      description: 'Devuelve los detalles completos de una categoría.
+
+
+        **La respuesta incluye:**
+
+        - Datos básicos (nombre, descripción)
+
+        - `tallerId`: ID del taller propietario
+
+        - `listaMedios`: Array con imágenes (cada una con publicId, secure_url, etc.)
+
+        - `mappedGlobalCategoryId`: ID de categoría global (si existe)
+
+
+        **Nota:** Este endpoint es público (no requiere autenticación)
+
+        '
+      operationId: getCategoria_1
       parameters:
       - name: id
         in: path
+        description: ID de la categoría
         required: true
         schema:
           type: string
+        example: 507f1f77bcf86cd799439011
       responses:
         '200':
           description: Categoría encontrada
+          content:
+            application/json:
+              example:
+                categoria:
+                  id: 507f1f77bcf86cd799439011
+                  nombre: Filtros
+                  descripcion: Filtros de aceite, aire y combustible
+                  tallerId: 507f1f77bcf86cd799439777
+                  listaMedios:
+                  - type: image/jpeg
+                    publicId: products/507f1f77/categoria-filtros-abc123
+                    secure_url: https://res.cloudinary.com/df7ggzasi/image/upload/v1763282466/products/507f1f77/categoria-filtros-abc123.jpg
+                    format: jpg
+                    width: 800
+                    height: 600
+                    order: 0
+                  mappedGlobalCategoryId: global-cat-filtros
         '404':
-          description: No encontrada
+          description: Categoría no encontrada
     put:
       tags:
       - Categorias
       summary: Actualizar categoría
+      description: 'Actualiza los datos de una categoría. Envía solo los campos que
+        deseas actualizar.
+
+
+        **IMPORTANTE sobre `listaMedios`:**
+
+        - Si actualizas `listaMedios`, DEBE incluir `publicId` en cada medio
+
+        - Al actualizar, se reemplazan las imágenes anteriores (las viejas se eliminan
+        de Cloudinary automáticamente)
+
+        - Para agregar nuevas imágenes manteniendo las existentes, primero obtén la
+        categoría actual y agrega a su array
+
+
+        **Campos actualizables:**
+
+        - `nombre`: Nombre de la categoría
+
+        - `descripcion`: Descripción
+
+        - `tallerId`: ID del taller (normalmente no se cambia)
+
+        - `listaMedios`: Array de medios (DEBE incluir publicId)
+
+        - `mappedGlobalCategoryId`: ID de categoría global
+
+        '
       operationId: actualizarCategoria
       parameters:
       - name: id
         in: path
+        description: ID de la categoría
         required: true
         schema:
           type: string
+        example: 507f1f77bcf86cd799439011
       requestBody:
+        description: 'Datos actualizados de la categoría (solo enviar los campos a
+          modificar).
+
+          Si actualizas `listaMedios`, DEBE incluir `publicId` en cada elemento.
+
+          '
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CategoriaRequest'
+            examples:
+              Actualizar nombre y descripción:
+                description: Actualizar nombre y descripción
+                value:
+                  nombre: Filtros Premium
+                  descripcion: Filtros de alta calidad para motos
+              Actualizar con nueva imagen:
+                description: Actualizar con nueva imagen
+                value:
+                  nombre: Filtros Premium
+                  listaMedios:
+                  - type: image/jpeg
+                    publicId: products/nueva-categoria-xyz789
+                    secure_url: https://res.cloudinary.com/df7ggzasi/image/upload/v1763285500/products/nueva-categoria-xyz789.jpg
+                    format: jpg
+                    order: 0
         required: true
       responses:
         '200':
-          description: Categoría actualizada
+          description: Categoría actualizada exitosamente
+          content:
+            application/json:
+              example:
+                categoria:
+                  id: 507f1f77bcf86cd799439011
+                  nombre: Filtros Premium
+                  descripcion: Filtros de alta calidad para motos
         '404':
-          description: No encontrada
+          description: Categoría no encontrada
+        '400':
+          description: Datos inválidos
     delete:
       tags:
       - Categorias
       summary: Eliminar categoría
+      description: 'Elimina una categoría por ID.
+
+
+        **IMPORTANTE:**
+
+        - También elimina automáticamente las imágenes asociadas de Cloudinary (si
+        existen en `listaMedios` con `publicId`)
+
+        - Si la categoría tiene productos asociados, puede fallar (dependiendo de
+        la lógica de negocio)
+
+        - Esta acción no se puede deshacer
+
+
+        **Limpieza automática:**
+
+        - Todas las imágenes en `listaMedios` que tengan `publicId` serán eliminadas
+        de Cloudinary
+
+        - Si alguna imagen no tiene `publicId`, quedará huérfana en Cloudinary
+
+        '
       operationId: eliminar_1
       parameters:
       - name: id
         in: path
+        description: ID de la categoría a eliminar
         required: true
         schema:
           type: string
+        example: 507f1f77bcf86cd799439011
       responses:
         '200':
-          description: Eliminada
+          description: Categoría eliminada exitosamente (y sus medios de Cloudinary)
+          content:
+            application/json:
+              example:
+                deleted: true
+                id: 507f1f77bcf86cd799439011
         '404':
-          description: No encontrada
+          description: Categoría no encontrada
+        '403':
+          description: Sin permisos para eliminar esta categoría
   /api/uploads/cloudinary-sign:
     post:
       tags:
@@ -701,7 +900,7 @@ paths:
       summary: Listar productos
       description: Devuelve una lista paginada de productos. Soporta búsqueda por
         nombre (q) o filtrado por categoría (categoriaId).
-      operationId: listar
+      operationId: listar_1
       parameters:
       - name: q
         in: query
@@ -759,20 +958,59 @@ paths:
       tags:
       - Productos
       summary: Crear producto
-      description: Crea un nuevo producto en el inventario. Para imágenes se recomienda
-        subir a Cloudinary desde el cliente usando el endpoint de firma y enviar en
-        `listaMedios` objetos con campos `publicId` y `secure_url`.
+      description: 'Crea un nuevo producto en el inventario.
+
+
+        **IMPORTANTE - Gestión de Imágenes:**
+
+        - Las imágenes DEBEN subirse primero a Cloudinary usando `/api/uploads/cloudinary-sign`
+
+        - Cada objeto en `listaMedios` DEBE incluir el campo `publicId` (CRÍTICO para
+        eliminar imágenes al borrar el producto)
+
+        - Sin `publicId`, las imágenes quedarán huérfanas en Cloudinary y no se podrán
+        eliminar automáticamente
+
+
+        **Campos recomendados:**
+
+        - `tallerId`: Asocia el producto a un taller específico (recomendado para
+        multi-tenant)
+
+        - `specs`: Mapa de especificaciones técnicas (ej: {"Marca":"Yamaha", "Modelo":"R15",
+        "Peso":"0.2kg"})
+
+        - `listaMedios`: Array de objetos con estructura: {type, publicId, secure_url,
+        format, width, height, order}
+
+
+        **Flujo recomendado para imágenes:**
+
+        1. Obtener firma: POST /api/uploads/cloudinary-sign con {folder: "products"}
+
+        2. Subir a Cloudinary con la firma obtenida
+
+        3. Guardar en `listaMedios` el objeto completo que devuelve Cloudinary (especialmente
+        `public_id`)
+
+        '
       operationId: crearProducto
       requestBody:
-        description: Datos del producto (incluir `tallerId`). `listaMedios` ejemplo
-          incluido.
+        description: 'Datos del producto.
+
+          **CRÍTICO**: Si incluyes `listaMedios`, cada medio DEBE tener `publicId`
+          para poder eliminar las imágenes de Cloudinary.
+
+          El campo `specs` es opcional pero recomendado para especificaciones técnicas.
+
+          '
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/ProductoRequest'
             examples:
-              Ejemplo de producto:
-                description: Ejemplo de producto
+              Ejemplo de producto completo:
+                description: Ejemplo de producto completo
                 value:
                   nombre: Filtro de Aceite Yamaha
                   descripcion: Filtro de aceite para motos Yamaha 150cc
@@ -781,14 +1019,20 @@ paths:
                   categoriaId: 507f1f77bcf86cd799439011
                   tallerId: 507f1f77bcf86cd799439777
                   listaMedios:
-                  - type: image
-                    publicId: products/507f1f77/abc123
-                    secure_url: https://res.cloudinary.com/df7ggzasi/image/upload/v1/products/abc123.jpg
+                  - type: image/jpeg
+                    publicId: products/507f1f77/filtro-yamaha-abc123
+                    secure_url: https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg
+                    url: https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg
                     format: jpg
+                    width: 800
+                    height: 600
                     order: 0
                   specs:
                     Marca: Yamaha
                     Modelo: YZF-R15
+                    Compatibilidad: 150cc
+                    Material: Papel
+                    Peso: 0.2kg
         required: true
       responses:
         '201':
@@ -801,8 +1045,9 @@ paths:
                   nombre: Filtro de Aceite Yamaha
                   precio: 25.5
                   stock: 100
+                  tallerId: 507f1f77bcf86cd799439777
         '400':
-          description: Datos inválidos
+          description: 'Datos inválidos (ej: nombre vacío, stock negativo)'
   /api/movimientos:
     get:
       tags:
@@ -810,7 +1055,7 @@ paths:
       summary: Listar movimientos
       description: Lista movimientos de stock. Puede filtrarse por producto o por
         tipo de movimiento.
-      operationId: listar_1
+      operationId: listar_2
       parameters:
       - name: productoId
         in: query
@@ -1046,7 +1291,7 @@ paths:
       description: Busca categorías por nombre o lista categorías de un taller. Por
         defecto `tallerId` es obligatorio; usar `todas=true` sólo si se es platform-admin
         para obtener todas las categorías.
-      operationId: listar_2
+      operationId: listar_3
       parameters:
       - name: q
         in: query
@@ -1106,31 +1351,79 @@ paths:
       tags:
       - Categorias
       summary: Crear categoría
-      description: 'Crea una nueva categoría de productos. Nota: `tallerId` es obligatorio
-        ya que todas las categorías pertenecen a un taller.'
+      description: 'Crea una nueva categoría de productos.
+
+
+        **IMPORTANTE:**
+
+        - `tallerId` es REQUERIDO para crear categorías (validación en el servicio)
+
+        - Si no se proporciona `tallerId`, el backend devolverá: {"error": "tallerId
+        es obligatorio para crear una categoría"}
+
+
+        **Gestión de Imágenes:**
+
+        - Las imágenes DEBEN subirse primero a Cloudinary usando `/api/uploads/cloudinary-sign`
+
+        - Cada objeto en `listaMedios` DEBE incluir el campo `publicId` (CRÍTICO para
+        eliminar imágenes al borrar la categoría)
+
+        - Sin `publicId`, las imágenes quedarán huérfanas en Cloudinary y no se podrán
+        eliminar automáticamente
+
+
+        **Estructura de `listaMedios`:**
+
+        - Cada elemento debe tener: {type, publicId, secure_url, format, width, height,
+        order}
+
+        - El campo `publicId` es retornado por Cloudinary como `public_id` al subir
+        la imagen
+
+
+        **Flujo recomendado para imágenes:**
+
+        1. Obtener firma: POST /api/uploads/cloudinary-sign con {folder: "products"}
+
+        2. Subir a Cloudinary con la firma obtenida
+
+        3. Guardar en `listaMedios` el objeto completo que devuelve Cloudinary (especialmente
+        `public_id`)
+
+        '
       operationId: crearCategoria
       requestBody:
-        description: 'Datos de la categoría (tallerId obligatorio). `listaMedios`
-          acepta una lista de objetos con campos: type, publicId, secure_url, format,
-          order.'
+        description: 'Datos de la categoría.
+
+          **REQUERIDO**: `nombre` y `tallerId` (el backend validará que `tallerId`
+          esté presente)
+
+          **CRÍTICO**: Si incluyes `listaMedios`, cada medio DEBE tener `publicId`
+          para poder eliminar las imágenes de Cloudinary.
+
+          '
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/CategoriaRequest'
             examples:
-              Ejemplo de categoría:
-                description: Ejemplo de categoría
+              Ejemplo de categoría completa:
+                description: Ejemplo de categoría completa
                 value:
                   nombre: Filtros
                   descripcion: Filtros de aceite, aire y combustible
-                  iconoRecurso: 2131230988
                   tallerId: 507f1f77bcf86cd799439777
                   listaMedios:
-                  - type: image
-                    publicId: products/507f1f77/abc123
-                    secure_url: https://res.cloudinary.com/df7ggzasi/image/upload/v1/products/abc123.jpg
+                  - type: image/jpeg
+                    publicId: products/507f1f77/categoria-filtros-abc123
+                    secure_url: https://res.cloudinary.com/df7ggzasi/image/upload/v1763282466/products/507f1f77/categoria-filtros-abc123.jpg
+                    url: https://res.cloudinary.com/df7ggzasi/image/upload/v1763282466/products/507f1f77/categoria-filtros-abc123.jpg
                     format: jpg
+                    width: 800
+                    height: 600
                     order: 0
+                  mappedGlobalCategoryId: global-cat-filtros
         required: true
       responses:
         '201':
@@ -1141,12 +1434,25 @@ paths:
                 categoria:
                   id: 507f1f77bcf86cd799439011
                   nombre: Filtros
+                  descripcion: Filtros de aceite, aire y combustible
                   tallerId: 507f1f77bcf86cd799439777
                   listaMedios:
-                  - publicId: products/507f1f77/abc123
-                    secure_url: https://res.cloudinary.com/...
+                  - type: image/jpeg
+                    publicId: products/507f1f77/categoria-filtros-abc123
+                    secure_url: https://res.cloudinary.com/df7ggzasi/image/upload/v1763282466/products/507f1f77/categoria-filtros-abc123.jpg
         '400':
-          description: Datos inválidos (p.ej. falta tallerId)
+          description: 'Datos inválidos (ej: falta tallerId, nombre vacío, o error
+            de validación)'
+          content:
+            application/json:
+              example:
+                error: tallerId es obligatorio para crear una categoría
+        '403':
+          description: Permisos insuficientes
+          content:
+            application/json:
+              example:
+                error: Permisos insuficientes para crear categoría en este taller
   /api/carritos:
     get:
       tags:
@@ -1639,12 +1945,38 @@ paths:
           description: Registro eliminado
         '404':
           description: No encontrado
-  /api/public/categorias:
+  /api/public/productos:
     get:
       tags:
-      - public-categorias-controller
-      operationId: listarPublico
+      - PublicProductosController
+      summary: Listar productos (público)
+      description: 'Devuelve productos paginados para clientes públicos (sin autenticación).
+
+
+        Soporta:
+
+        - Búsqueda por nombre con `q`
+
+        - Filtrado por `categoriaId`
+
+        - Paginación con `page` y `size`
+
+
+        La respuesta expone `totalStock` agregado y `stockByAlmacen` cuando está disponible.
+
+        '
+      operationId: listar
       parameters:
+      - name: q
+        in: query
+        required: false
+        schema:
+          type: string
+      - name: categoriaId
+        in: query
+        required: false
+        schema:
+          type: string
       - name: page
         in: query
         required: false
@@ -1661,11 +1993,148 @@ paths:
           default: 20
       responses:
         '200':
-          description: OK
+          description: Lista de productos
           content:
-            '*/*':
-              schema:
-                type: object
+            application/json:
+              example:
+                productos:
+                - id: 507f191e810c19729de860ea
+                  nombre: Filtro
+                  precio: 25.5
+                  totalStock: 50
+                total: 1
+                page: 0
+                size: 20
+  /api/public/productos/{id}:
+    get:
+      tags:
+      - PublicProductosController
+      summary: Obtener producto por ID (público)
+      description: 'Devuelve los detalles completos de un producto con `totalStock`
+        agregado y `stockByAlmacen`.
+
+
+        Este endpoint no requiere autenticación.
+
+        '
+      operationId: getProducto
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '200':
+          description: Producto encontrado
+          content:
+            application/json:
+              example:
+                producto:
+                  id: 507f191e810c19729de860ea
+                  nombre: Filtro de Aceite
+                  precio: 25.5
+                  totalStock: 50
+                  stockByAlmacen:
+                  - almacenId: abc
+                    cantidad: 20
+        '404':
+          description: Producto no encontrado
+  /api/public/categorias:
+    get:
+      tags:
+      - PublicCategoriasController
+      summary: Listar todas las categorías (público)
+      description: 'Devuelve todas las categorías (globales + por taller) sin requerir
+        autenticación.
+
+        Este endpoint está diseñado para clientes móviles y aplicaciones públicas.
+
+
+        **Nota:** No requiere token de autenticación.
+
+        '
+      operationId: listarCategorias
+      parameters:
+      - name: page
+        in: query
+        description: Número de página
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 0
+        example: 0
+      - name: size
+        in: query
+        description: Elementos por página
+        required: false
+        schema:
+          type: integer
+          format: int32
+          default: 20
+        example: 20
+      - name: q
+        in: query
+        description: Búsqueda por nombre (opcional)
+        required: false
+        schema:
+          type: string
+        example: filtros
+      responses:
+        '200':
+          description: Lista de categorías
+          content:
+            application/json:
+              example:
+                categorias:
+                - id: 507f1f77bcf86cd799439011
+                  nombre: Filtros
+                  tallerId: 507f1f77bcf86cd799439777
+                  listaMedios:
+                  - publicId: products/507f1f77/abc123
+                    secure_url: https://res.cloudinary.com/...
+                total: 1
+                page: 0
+                size: 20
+  /api/public/categorias/{id}:
+    get:
+      tags:
+      - PublicCategoriasController
+      summary: Obtener categoría por ID (público)
+      description: 'Devuelve los detalles de una categoría específica sin requerir
+        autenticación.
+
+
+        **Nota:** No requiere token de autenticación.
+
+        '
+      operationId: getCategoria
+      parameters:
+      - name: id
+        in: path
+        description: ID de la categoría
+        required: true
+        schema:
+          type: string
+        example: 507f1f77bcf86cd799439011
+      responses:
+        '200':
+          description: Categoría encontrada
+          content:
+            application/json:
+              example:
+                categoria:
+                  id: 507f1f77bcf86cd799439011
+                  nombre: Filtros
+                  descripcion: Filtros de aceite, aire y combustible
+                  tallerId: 507f1f77bcf86cd799439777
+                  listaMedios:
+                  - type: image/jpeg
+                    publicId: products/507f1f77/categoria-filtros-abc123
+                    secure_url: https://res.cloudinary.com/...
+        '404':
+          description: Categoría no encontrada
   /api/movimientos/{id}:
     get:
       tags:
@@ -1945,7 +2414,6 @@ components:
     CategoriaRequest:
       required:
       - nombre
-      - tallerId
       type: object
       properties:
         idString:
