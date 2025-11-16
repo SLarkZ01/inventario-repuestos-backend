@@ -1,6 +1,5 @@
 package com.repobackend.api.categoria.controller;
 
-import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.repobackend.api.categoria.dto.CategoriaRequest;
 import com.repobackend.api.categoria.service.CategoriaService;
+import com.repobackend.api.auth.service.AuthorizationService;
 
 // OpenAPI
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -29,32 +29,34 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 @Tag(name = "Categorias", description = "Gestión de categorías de productos")
 public class CategoriaController {
     private final CategoriaService categoriaService;
+    private final AuthorizationService authorizationService;
 
-    public CategoriaController(CategoriaService categoriaService) {
+    public CategoriaController(CategoriaService categoriaService, AuthorizationService authorizationService) {
         this.categoriaService = categoriaService;
+        this.authorizationService = authorizationService;
     }
 
     @Operation(
         summary = "Crear categoría",
-        description = "Crea una nueva categoría de productos",
+        description = "Crea una nueva categoría de productos. Nota: `tallerId` es obligatorio ya que todas las categorías pertenecen a un taller.",
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Datos de la categoría",
+            description = "Datos de la categoría (tallerId obligatorio). `listaMedios` acepta una lista de objetos con campos: type, publicId, secure_url, format, order.",
             required = true,
             content = @Content(
                 mediaType = "application/json",
                 examples = @ExampleObject(
                     name = "Ejemplo de categoría",
-                    value = "{\"nombre\":\"Filtros\",\"descripcion\":\"Filtros de aceite, aire y combustible\",\"iconoRecurso\":2131230988,\"tallerId\":\"507f1f77bcf86cd799439777\",\"mappedGlobalCategoryId\":null}"
+                    value = "{\"nombre\":\"Filtros\",\"descripcion\":\"Filtros de aceite, aire y combustible\",\"iconoRecurso\":2131230988,\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image\",\"publicId\":\"products/507f1f77/abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1/products/abc123.jpg\",\"format\":\"jpg\",\"order\":0}]}"
                 )
             )
         ),
         responses = {
             @ApiResponse(responseCode = "201", description = "Categoría creada exitosamente",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"categoria\":{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros\",\"tallerId\":null}}")
+                    examples = @ExampleObject(value = "{\"categoria\":{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"publicId\":\"products/507f1f77/abc123\",\"secure_url\":\"https://res.cloudinary.com/...\"}]}}")
                 )
             ),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Datos inválidos (p.ej. falta tallerId)", content = @Content)
         }
     )
     @PostMapping
@@ -66,18 +68,18 @@ public class CategoriaController {
 
     @Operation(
         summary = "Buscar/listar categorías",
-        description = "Busca categorías por nombre o lista categorías globales o por taller.",
+        description = "Busca categorías por nombre o lista categorías de un taller. Por defecto `tallerId` es obligatorio; usar `todas=true` sólo si se es platform-admin para obtener todas las categorías.",
         parameters = {
             @io.swagger.v3.oas.annotations.Parameter(name = "q", description = "Término de búsqueda para nombre de categoría", example = "filtro"),
             @io.swagger.v3.oas.annotations.Parameter(name = "page", description = "Número de página", example = "0"),
             @io.swagger.v3.oas.annotations.Parameter(name = "size", description = "Elementos por página", example = "20"),
-            @io.swagger.v3.oas.annotations.Parameter(name = "tallerId", description = "ID del taller para listar categorías locales", example = "507f1f77bcf86cd799439777"),
-            @io.swagger.v3.oas.annotations.Parameter(name = "global", description = "Si true devuelve solo categorías globales (tallerId == null)", example = "false")
+            @io.swagger.v3.oas.annotations.Parameter(name = "tallerId", description = "ID del taller (obligatorio para listar)", example = "507f1f77bcf86cd799439777", required = true),
+            @io.swagger.v3.oas.annotations.Parameter(name = "todas", description = "Si true y el caller es platform-admin devuelve todas las categorías", example = "false")
         },
         responses = {
             @ApiResponse(responseCode = "200", description = "Lista de categorías",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"categorias\":[{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros\",\"tallerId\":null}],\"total\":1}")
+                    examples = @ExampleObject(value = "{\"categorias\":[{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"publicId\":\"products/507f1f77/abc123\",\"secure_url\":\"https://res.cloudinary.com/...\"}]}],\"total\":1}")
                 )
             )
         }
@@ -87,25 +89,24 @@ public class CategoriaController {
                                     @RequestParam(required = false, defaultValue = "0") int page,
                                     @RequestParam(required = false, defaultValue = "20") int size,
                                     @RequestParam(required = false) String tallerId,
-                                    @RequestParam(required = false, defaultValue = "false") boolean global,
                                     @RequestParam(required = false, defaultValue = "false") boolean todas) {
-        // if search term present, use paginated search across both global and local
+        // búsqueda por nombre
         if (q != null && !q.isBlank()) {
             var res = categoriaService.buscarPorNombrePaginado(q, page, size);
             return ResponseEntity.ok(res);
         }
-        // NEW: if todas=true, return all categories (global + taller)
+        // si piden todas, sólo platform admin puede
         if (todas) {
+            org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+            String caller = auth == null ? null : auth.getName();
+            if (!authorizationService.isPlatformAdmin(caller)) return ResponseEntity.status(403).body(Map.of("error","Permisos insuficientes"));
             return ResponseEntity.ok(categoriaService.listarTodasLasCategorias(page, size));
         }
-        if (global) {
-            return ResponseEntity.ok(categoriaService.listarCategoriasGlobales(page, size));
+        // Por defecto, requerimos tallerId para listar categorías (las categorías pertenecen a talleres)
+        if (tallerId == null || tallerId.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error","tallerId es obligatorio para listar categorías"));
         }
-        if (tallerId != null && !tallerId.isBlank()) {
-            return ResponseEntity.ok(categoriaService.listarCategoriasPorTaller(tallerId, page, size));
-        }
-        // default: return global categories
-        return ResponseEntity.ok(categoriaService.listarCategoriasGlobales(page, size));
+        return ResponseEntity.ok(categoriaService.listarCategoriasPorTaller(tallerId, page, size));
     }
 
     @Operation(summary = "Obtener categoría", responses = {@ApiResponse(responseCode = "200", description = "Categoría encontrada", content = @Content),

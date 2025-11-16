@@ -15,6 +15,7 @@ import com.repobackend.api.categoria.dto.CategoriaRequest;
 import com.repobackend.api.categoria.dto.CategoriaResponse;
 import com.repobackend.api.categoria.model.Categoria;
 import com.repobackend.api.categoria.repository.CategoriaRepository;
+import com.repobackend.api.media.MediaSanitizer;
 
 @Service
 public class CategoriaService {
@@ -40,27 +41,21 @@ public class CategoriaService {
         c.setDescripcion((String) body.getOrDefault("descripcion", null));
         Number icono = (Number) body.getOrDefault("iconoRecurso", null);
         if (icono != null) c.setIconoRecurso(icono.intValue());
-        // optional tallerId for local categories
+        // tallerId ahora obligatorio
         if (body.containsKey("tallerId")) c.setTallerId((String) body.get("tallerId"));
+        else return Map.of("error", "tallerId es obligatorio para crear categoría");
         if (body.containsKey("mappedGlobalCategoryId")) c.setMappedGlobalCategoryId((String) body.get("mappedGlobalCategoryId"));
-        // listaMedios opcional (aceptar si viene desde cliente)
+        // listaMedios opcional (aceptar si viene desde cliente) y sanitizar
         if (body.containsKey("listaMedios")) {
             Object lm = body.get("listaMedios");
-            if (lm instanceof List) c.setListaMedios((List<java.util.Map<String, Object>>) lm);
+            if (lm instanceof List) c.setListaMedios(MediaSanitizer.sanitize((List<java.util.Map<String, Object>>) lm));
         }
         c.setCreadoEn(new Date());
-        // Authorization: if local category (has tallerId) require membership; if global (no tallerId) require admin
+        // Authorization: platform admin o miembro del taller con rol ADMIN/VENDEDOR
         org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         String caller = auth == null ? null : auth.getName();
-        String tId = c.getTallerId();
-        if (tId == null) {
-            // Allow platform admin or global vendedor to create global categories
-            if (!authorizationService.isPlatformAdmin(caller) && !authorizationService.isGlobalVendedor(caller))
-                return Map.of("error", "Solo ADMIN o VENDEDOR global pueden crear categorías globales");
-        } else {
-            if (!authorizationService.isPlatformAdmin(caller) && !authorizationService.isMemberWithAnyRole(caller, tId, java.util.List.of("ADMIN","VENDEDOR"))) {
-                return Map.of("error", "Permisos insuficientes para crear categoría local en este taller");
-            }
+        if (!authorizationService.isPlatformAdmin(caller) && !authorizationService.isMemberWithAnyRole(caller, c.getTallerId(), java.util.List.of("ADMIN","VENDEDOR"))) {
+            return Map.of("error", "Permisos insuficientes para crear categoría en este taller");
         }
         Categoria saved = categoriaRepository.save(c);
         return Map.of("categoria", saved);
@@ -71,22 +66,23 @@ public class CategoriaService {
     @CacheEvict(value = "categoriasGlobales", allEntries = true)
     public Map<String, Object> crearCategoria(CategoriaRequest req) {
         Categoria c = toEntity(req);
-        // Generate idString if not provided
+        // Ahora las categorías siempre deben pertenecer a un taller => validar tallerId
+        if (c.getTallerId() == null || c.getTallerId().isBlank()) {
+            return Map.of("error", "tallerId es obligatorio para crear una categoría");
+        }
+        // Generate idString si no se provee
         if (c.getIdString() == null || c.getIdString().trim().isEmpty()) {
             c.setIdString(java.util.UUID.randomUUID().toString());
         }
         c.setCreadoEn(new Date());
         org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         String caller = auth == null ? null : auth.getName();
-        String tId = c.getTallerId();
-        if (tId == null) {
-            if (!authorizationService.isPlatformAdmin(caller) && !authorizationService.isGlobalVendedor(caller))
-                return Map.of("error", "Solo ADMIN o VENDEDOR global pueden crear categorías globales");
-        } else {
-            if (!authorizationService.isPlatformAdmin(caller) && !authorizationService.isMemberWithAnyRole(caller, tId, java.util.List.of("ADMIN","VENDEDOR"))) {
-                return Map.of("error", "Permisos insuficientes para crear categoría local en este taller");
-            }
+        // Authorization: platform admin o miembro del taller con rol ADMIN/VENDEDOR
+        if (!authorizationService.isPlatformAdmin(caller) && !authorizationService.isMemberWithAnyRole(caller, c.getTallerId(), java.util.List.of("ADMIN","VENDEDOR"))) {
+            return Map.of("error", "Permisos insuficientes para crear categoría en este taller");
         }
+        // Sanitizar listaMedios si existe
+        if (c.getListaMedios() != null) c.setListaMedios(MediaSanitizer.sanitize(c.getListaMedios()));
         Categoria saved = categoriaRepository.save(c);
         return Map.of("categoria", toResponse(saved));
     }
@@ -99,8 +95,8 @@ public class CategoriaService {
         c.setIconoRecurso(req.getIconoRecurso());
         c.setTallerId(req.getTallerId());
         c.setMappedGlobalCategoryId(req.getMappedGlobalCategoryId());
-        // copiar lista de medios si se provee
-        if (req.getListaMedios() != null) c.setListaMedios(req.getListaMedios());
+        // copiar y sanitizar lista de medios si se provee
+        if (req.getListaMedios() != null) c.setListaMedios(MediaSanitizer.sanitize(req.getListaMedios()));
         return c;
     }
 
@@ -171,11 +167,18 @@ public class CategoriaService {
         return Map.of("categorias", p.getContent(), "total", p.getTotalElements(), "page", page, "size", size);
     }
 
-    @PreAuthorize("hasRole('ADMIN') or @authorizationService.canManageCategory(authentication.name)")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VENDEDOR')")
     public Map<String, Object> actualizarCategoria(String id, Map<String, Object> body) {
         Optional<Categoria> maybe = categoriaRepository.findById(id);
         if (maybe.isEmpty()) return Map.of("error", "Categoria no encontrada");
         Categoria c = maybe.get();
+        // autorización: platform admin o miembro del taller
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String caller = auth == null ? null : auth.getName();
+        String tId = c.getTallerId();
+        if (!authorizationService.isPlatformAdmin(caller) && !authorizationService.isMemberWithAnyRole(caller, tId, java.util.List.of("ADMIN","VENDEDOR"))) {
+            return Map.of("error", "Permisos insuficientes para actualizar esta categoría");
+        }
         if (body.containsKey("nombre")) c.setNombre((String) body.get("nombre"));
         if (body.containsKey("descripcion")) c.setDescripcion((String) body.get("descripcion"));
         if (body.containsKey("iconoRecurso")) {
@@ -184,29 +187,45 @@ public class CategoriaService {
         }
         if (body.containsKey("listaMedios")) {
             Object lm = body.get("listaMedios");
-            if (lm instanceof List) c.setListaMedios((List<java.util.Map<String, Object>>) lm);
+            if (lm instanceof List) c.setListaMedios(MediaSanitizer.sanitize((List<java.util.Map<String, Object>>) lm));
         }
         Categoria saved = categoriaRepository.save(c);
         return Map.of("categoria", saved);
     }
 
     // DTO-based update
-    @PreAuthorize("hasRole('ADMIN') or @authorizationService.canManageCategory(authentication.name)")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VENDEDOR')")
     public Map<String, Object> actualizarCategoria(String id, CategoriaRequest req) {
         Optional<Categoria> maybe = categoriaRepository.findById(id);
         if (maybe.isEmpty()) return Map.of("error", "Categoria no encontrada");
         Categoria c = maybe.get();
+        // autorización: platform admin o miembro del taller
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String caller = auth == null ? null : auth.getName();
+        String tId = c.getTallerId();
+        if (!authorizationService.isPlatformAdmin(caller) && !authorizationService.isMemberWithAnyRole(caller, tId, java.util.List.of("ADMIN","VENDEDOR"))) {
+            return Map.of("error", "Permisos insuficientes para actualizar esta categoría");
+        }
         if (req.getNombre() != null) c.setNombre(req.getNombre());
         if (req.getDescripcion() != null) c.setDescripcion(req.getDescripcion());
         if (req.getIconoRecurso() != null) c.setIconoRecurso(req.getIconoRecurso());
+        if (req.getListaMedios() != null) c.setListaMedios(MediaSanitizer.sanitize(req.getListaMedios()));
         Categoria saved = categoriaRepository.save(c);
+        // invalidar cache de categoriasGlobales por si acaso
         return Map.of("categoria", toResponse(saved));
     }
 
-    @PreAuthorize("hasRole('ADMIN') or @authorizationService.canManageCategory(authentication.name)")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('VENDEDOR')")
     public Map<String, Object> eliminarCategoria(String id) {
         Optional<Categoria> maybe = categoriaRepository.findById(id);
         if (maybe.isEmpty()) return Map.of("error", "Categoria no encontrada");
+        Categoria c = maybe.get();
+        // autorización: platform admin o miembro del taller
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String caller = auth == null ? null : auth.getName();
+        if (!authorizationService.isPlatformAdmin(caller) && !authorizationService.isMemberWithAnyRole(caller, c.getTallerId(), java.util.List.of("ADMIN","VENDEDOR"))) {
+            return Map.of("error", "Permisos insuficientes para eliminar esta categoría");
+        }
         categoriaRepository.deleteById(id);
         return Map.of("deleted", true);
     }

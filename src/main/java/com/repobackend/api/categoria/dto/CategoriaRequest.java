@@ -14,6 +14,7 @@ public class CategoriaRequest {
     private String descripcion;
 
     private Integer iconoRecurso;
+    @NotBlank(message = "tallerId es obligatorio: las categorias ahora siempre pertenecen a un taller")
     private String tallerId;
     private String mappedGlobalCategoryId;
 
