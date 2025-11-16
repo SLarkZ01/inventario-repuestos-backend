@@ -37,6 +37,8 @@ tags:
   description: Operaciones sobre carritos de compra
 - name: Movimientos
   description: Registro de entradas y salidas de stock
+- name: Uploads
+  description: Operaciones relacionadas con uploads a Cloudinary
 paths:
   /api/talleres/{tallerId}:
     get:
@@ -359,6 +361,22 @@ paths:
           description: Eliminada
         '404':
           description: No encontrada
+  /api/uploads/cloudinary-sign:
+    post:
+      tags:
+      - Uploads
+      summary: Generar firma para Cloudinary
+      description: Genera apiKey, timestamp y signature para permitir uploads firmados
+        desde el cliente. El body opcional puede incluir parámetros a firmar como
+        'folder' o 'public_id'.
+      operationId: sign
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
   /api/talleres:
     get:
       tags:
@@ -1884,6 +1902,12 @@ components:
           type: string
         mappedGlobalCategoryId:
           type: string
+        listaMedios:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: object
     MovimientoRequest:
       required:
       - cantidad
