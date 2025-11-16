@@ -16,15 +16,22 @@ import com.repobackend.api.categoria.dto.CategoriaResponse;
 import com.repobackend.api.categoria.model.Categoria;
 import com.repobackend.api.categoria.repository.CategoriaRepository;
 import com.repobackend.api.media.MediaSanitizer;
+import com.repobackend.api.cloud.service.CloudinaryService;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class CategoriaService {
-    private final CategoriaRepository categoriaRepository;
-    private final AuthorizationService authorizationService;
+    private static final Logger logger = LoggerFactory.getLogger(CategoriaService.class);
+     private final CategoriaRepository categoriaRepository;
+     private final AuthorizationService authorizationService;
+     private final CloudinaryService cloudinaryService;
 
-    public CategoriaService(CategoriaRepository categoriaRepository, AuthorizationService authorizationService) {
+    public CategoriaService(CategoriaRepository categoriaRepository, AuthorizationService authorizationService, CloudinaryService cloudinaryService) {
         this.categoriaRepository = categoriaRepository;
         this.authorizationService = authorizationService;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('VENDEDOR')")
@@ -226,6 +233,73 @@ public class CategoriaService {
         if (!authorizationService.isPlatformAdmin(caller) && !authorizationService.isMemberWithAnyRole(caller, c.getTallerId(), java.util.List.of("ADMIN","VENDEDOR"))) {
             return Map.of("error", "Permisos insuficientes para eliminar esta categoría");
         }
+        // Intentar eliminar recursos asociados en Cloudinary (si hay listaMedios)
+        try {
+            if (c.getListaMedios() != null && !c.getListaMedios().isEmpty()) {
+                logger.info("Intentando eliminar {} medios de Cloudinary para categoría {}", c.getListaMedios().size(), id);
+                for (Map<String, Object> m : c.getListaMedios()) {
+                    if (m == null) continue;
+                    String publicId = null;
+                    Object p = m.get("publicId");
+                    if (p instanceof String && !((String)p).isBlank()) {
+                        publicId = ((String)p).trim();
+                        logger.info("PublicId encontrado directamente: {}", publicId);
+                    } else {
+                        // intentar extraer publicId desde secure_url o url
+                        Object su = m.get("secure_url");
+                        Object uo = m.get("url");
+                        String u = su != null ? su.toString() : (uo != null ? uo.toString() : null);
+                        logger.info("Extrayendo publicId de URL: {}", u);
+                        if (u != null && !u.isBlank()) {
+                            int pos = u.indexOf("/image/upload/");
+                            if (pos >= 0) {
+                                String after = u.substring(pos + "/image/upload/".length());
+                                // quitar prefijo de versión si existe: v12345/
+                                after = after.replaceFirst("^v\\d+/", "");
+                                publicId = after;
+                            } else {
+                                pos = u.indexOf("/upload/");
+                                if (pos >= 0) {
+                                    String after = u.substring(pos + "/upload/".length());
+                                    after = after.replaceFirst("^v\\d+/", "");
+                                    publicId = after;
+                                }
+                            }
+                        }
+                    }
+                    if (publicId != null && !publicId.isBlank()) {
+                        logger.info("Intentando destruir recurso Cloudinary con publicId: {}", publicId);
+                        try {
+                            // Cloudinary a veces necesita el publicId sin extensión
+                            String publicIdSinExt = publicId;
+                            if (publicId.contains(".")) {
+                                publicIdSinExt = publicId.substring(0, publicId.lastIndexOf('.'));
+                            }
+                            // Intentar primero sin extensión (formato preferido por Cloudinary)
+                            try {
+                                Map<String,Object> result = cloudinaryService.destroy(publicIdSinExt);
+                                logger.info("Recurso Cloudinary '{}' eliminado exitosamente: {}", publicIdSinExt, result);
+                            } catch (Exception ex1) {
+                                // Si falla, intentar con extensión
+                                logger.warn("Fallo al eliminar sin extensión '{}', intentando con extensión: {}", publicIdSinExt, ex1.getMessage());
+                                Map<String,Object> result = cloudinaryService.destroy(publicId);
+                                logger.info("Recurso Cloudinary '{}' eliminado exitosamente con extensión: {}", publicId, result);
+                            }
+                        } catch (Exception ex) {
+                            logger.error("No se pudo destruir recurso Cloudinary '{}' al eliminar categoría {}: {}", publicId, id, ex.getMessage(), ex);
+                        }
+                    } else {
+                        logger.warn("No se pudo extraer publicId del medio: {}", m);
+                    }
+                }
+            } else {
+                logger.info("No hay medios para eliminar en categoría {}", id);
+            }
+        } catch (Exception ex) {
+            // registrar y continuar con eliminación en base de datos
+            logger.error("Error al intentar eliminar recursos en Cloudinary para la categoría {}: {}", id, ex.getMessage(), ex);
+        }
+
         categoriaRepository.deleteById(id);
         return Map.of("deleted", true);
     }

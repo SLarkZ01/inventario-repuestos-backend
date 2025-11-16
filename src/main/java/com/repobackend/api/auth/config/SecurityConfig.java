@@ -65,6 +65,8 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.POST, "/api/admin/users").permitAll()
             // Springdoc OpenAPI endpoints (swagger-ui, api-docs)
             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**").permitAll()
+            // Public simplified categories endpoint used by mobile app
+            .requestMatchers(HttpMethod.GET, "/api/public/categorias", "/api/public/categorias/**").permitAll()
             // Public product/catalog endpoints: permitir vista sin autenticación
             .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/**").permitAll()
             // Public categories listing/details

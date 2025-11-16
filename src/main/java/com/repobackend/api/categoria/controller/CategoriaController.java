@@ -113,25 +113,18 @@ public class CategoriaController {
             if (authorizationService.isPlatformAdmin(caller)) {
                 return ResponseEntity.ok(categoriaService.listarTodasLasCategorias(page, size));
             }
-            // Para callers no-admin (incluye anónimos) devolvemos únicamente las categorías globales
-            // para que clientes públicos (apps móviles) puedan mostrar categorías sin autenticación.
-            logger.info("Non-admin caller '{}' requested todas=true — returning global categories instead of denying access", caller);
-            return ResponseEntity.ok(categoriaService.listarCategoriasGlobales(page, size));
+            // COMPORTAMIENTO CAMBIADO: Para callers no-admin (incluye anónimos) devolvemos
+            // también TODAS las categorías (globales + por taller) para que clientes
+            // móviles vean el mismo catálogo que el Admin. Dejamos el log para trazabilidad.
+            logger.info("Non-admin caller '{}' requested todas=true — returning ALL categories to public clients", caller);
+            return ResponseEntity.ok(categoriaService.listarTodasLasCategorias(page, size));
         }
         // Por defecto, requerimos tallerId para listar categorías (las categorías pertenecen a talleres)
         if (tallerId == null || tallerId.isBlank()) {
-            // Si no se proporcionó tallerId y no hay término de búsqueda ni flag 'todas',
-            // devolvemos las categorías globales para permitir que clientes públicos
-            // vean categorías tipo catálogo (comportamiento tipo marketplace/public).
-            logger.info("No tallerId provided — returning global categories (public) for listing");
-            var globals = categoriaService.listarCategoriasGlobales(page, size);
-            // si no hay categorias globales y se configuró un defaultTallerId, usamos ese taller
-            java.util.List<?> cats = (java.util.List<?>) globals.getOrDefault("categorias", java.util.List.of());
-            if ((cats == null || cats.isEmpty()) && defaultTallerId != null && !defaultTallerId.isBlank()) {
-                logger.info("Global categories empty — falling back to defaultTallerId='{}'", defaultTallerId);
-                return ResponseEntity.ok(categoriaService.listarCategoriasPorTaller(defaultTallerId, page, size));
-            }
-            return ResponseEntity.ok(globals);
+            // COMPORTAMIENTO CAMBIADO: devolver todas las categorías (globales + locales)
+            // para clientes públicos (Android) para que no importe si pertenecen a un taller.
+            logger.info("No tallerId provided — returning ALL categories (global + by-taller) for public clients");
+            return ResponseEntity.ok(categoriaService.listarTodasLasCategorias(page, size));
         }
         return ResponseEntity.ok(categoriaService.listarCategoriasPorTaller(tallerId, page, size));
     }

@@ -25,8 +25,12 @@ import com.repobackend.api.auth.service.AuthorizationService;
 import com.repobackend.api.cloud.service.CloudinaryService;
 import com.repobackend.api.media.MediaSanitizer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class ProductoService {
+    private static final Logger logger = LoggerFactory.getLogger(ProductoService.class);
     private final ProductoRepository productoRepository;
     private final MongoTemplate mongoTemplate;
     private final StockService stockService;
@@ -282,26 +286,74 @@ public class ProductoService {
         Optional<Producto> maybe = productoRepository.findById(id);
         if (maybe.isEmpty()) return Map.of("error", "Producto no encontrado");
         Producto p = maybe.get();
-        // Intentar eliminar los recursos en Cloudinary (si existen publicId registrados)
+
+        // Intentar eliminar recursos asociados en Cloudinary (si hay listaMedios)
         try {
-            if (p.getListaMedios() != null) {
-                for (var m : p.getListaMedios()) {
-                    Object publicId = m.get("publicId");
-                    if (publicId instanceof String) {
-                        try {
-                            cloudinaryService.destroy((String) publicId);
-                        } catch (Exception e) {
-                            // No interrumpir la eliminación del documento si falla la limpieza remota
-                            // Loguear la excepción para revisión (usar slf4j si disponible)
-                            System.err.println("Warning: fallo al eliminar recurso Cloudinary publicId=" + publicId + " -> " + e.getMessage());
+            if (p.getListaMedios() != null && !p.getListaMedios().isEmpty()) {
+                logger.info("Intentando eliminar {} medios de Cloudinary para producto {}", p.getListaMedios().size(), id);
+                for (Map<String, Object> m : p.getListaMedios()) {
+                    if (m == null) continue;
+                    String publicId = null;
+                    Object pub = m.get("publicId");
+                    if (pub instanceof String && !((String)pub).isBlank()) {
+                        publicId = ((String)pub).trim();
+                        logger.info("PublicId encontrado directamente: {}", publicId);
+                    } else {
+                        // intentar extraer publicId desde secure_url o url
+                        Object su = m.get("secure_url");
+                        Object uo = m.get("url");
+                        String u = su != null ? su.toString() : (uo != null ? uo.toString() : null);
+                        logger.info("Extrayendo publicId de URL: {}", u);
+                        if (u != null && !u.isBlank()) {
+                            int pos = u.indexOf("/image/upload/");
+                            if (pos >= 0) {
+                                String after = u.substring(pos + "/image/upload/".length());
+                                // quitar prefijo de versión si existe: v12345/
+                                after = after.replaceFirst("^v\\d+/", "");
+                                publicId = after;
+                            } else {
+                                pos = u.indexOf("/upload/");
+                                if (pos >= 0) {
+                                    String after = u.substring(pos + "/upload/".length());
+                                    after = after.replaceFirst("^v\\d+/", "");
+                                    publicId = after;
+                                }
+                            }
                         }
                     }
+                    if (publicId != null && !publicId.isBlank()) {
+                        logger.info("Intentando destruir recurso Cloudinary con publicId: {}", publicId);
+                        try {
+                            // Cloudinary a veces necesita el publicId sin extensión
+                            String publicIdSinExt = publicId;
+                            if (publicId.contains(".")) {
+                                publicIdSinExt = publicId.substring(0, publicId.lastIndexOf('.'));
+                            }
+                            // Intentar primero sin extensión (formato preferido por Cloudinary)
+                            try {
+                                Map<String,Object> result = cloudinaryService.destroy(publicIdSinExt);
+                                logger.info("Recurso Cloudinary '{}' eliminado exitosamente: {}", publicIdSinExt, result);
+                            } catch (Exception ex1) {
+                                // Si falla, intentar con extensión
+                                logger.warn("Fallo al eliminar sin extensión '{}', intentando con extensión: {}", publicIdSinExt, ex1.getMessage());
+                                Map<String,Object> result = cloudinaryService.destroy(publicId);
+                                logger.info("Recurso Cloudinary '{}' eliminado exitosamente con extensión: {}", publicId, result);
+                            }
+                        } catch (Exception ex) {
+                            logger.error("No se pudo destruir recurso Cloudinary '{}' al eliminar producto {}: {}", publicId, id, ex.getMessage(), ex);
+                        }
+                    } else {
+                        logger.warn("No se pudo extraer publicId del medio: {}", m);
+                    }
                 }
+            } else {
+                logger.info("No hay medios para eliminar en producto {}", id);
             }
         } catch (Exception ex) {
-            // proteger: cualquier excepción inesperada no debe impedir la eliminación del documento
-            System.err.println("Warning: error al intentar limpiar recursos Cloudinary: " + ex.getMessage());
+            // registrar y continuar con eliminación en base de datos
+            logger.error("Error al intentar eliminar recursos en Cloudinary para el producto {}: {}", id, ex.getMessage(), ex);
         }
+
         productoRepository.deleteById(id);
         return Map.of("deleted", true);
     }

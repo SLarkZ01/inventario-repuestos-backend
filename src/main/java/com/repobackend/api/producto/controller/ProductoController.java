@@ -185,9 +185,22 @@ public class ProductoController {
         return ResponseEntity.ok(r);
     }
 
-    @Operation(summary = "Eliminar producto", description = "Elimina un producto por ID",
-        responses = {@ApiResponse(responseCode = "200", description = "Producto eliminado", content = @Content),
-                     @ApiResponse(responseCode = "404", description = "Producto no encontrado", content = @Content)})
+    @Operation(
+        summary = "Eliminar producto",
+        description = "Elimina un producto por ID. **IMPORTANTE**: También elimina automáticamente las imágenes asociadas de Cloudinary (si existen en `listaMedios`).",
+        parameters = {
+            @io.swagger.v3.oas.annotations.Parameter(name = "id", description = "ID del producto a eliminar", required = true, example = "507f191e810c19729de860ea")
+        },
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Producto eliminado exitosamente (y sus medios de Cloudinary)",
+                content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = "{\"deleted\":true}")
+                )
+            ),
+            @ApiResponse(responseCode = "404", description = "Producto no encontrado", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Sin permisos para eliminar este producto", content = @Content)
+        }
+    )
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminar(@PathVariable String id) {
         var r = productoService.eliminarProducto(id);
