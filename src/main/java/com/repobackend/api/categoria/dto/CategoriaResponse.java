@@ -74,3 +74,4 @@ public class CategoriaResponse {
     public List<Map<String, Object>> getListaMedios() { return listaMedios; }
     public void setListaMedios(List<Map<String, Object>> listaMedios) { this.listaMedios = listaMedios; }
 }
+

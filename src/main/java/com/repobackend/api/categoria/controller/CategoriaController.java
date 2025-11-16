@@ -2,6 +2,7 @@ package com.repobackend.api.categoria.controller;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,13 +24,19 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @RestController
 @RequestMapping("/api/categorias")
 @Tag(name = "Categorias", description = "Gestión de categorías de productos")
 public class CategoriaController {
+    private static final Logger logger = LoggerFactory.getLogger(CategoriaController.class);
     private final CategoriaService categoriaService;
     private final AuthorizationService authorizationService;
+
+    @Value("${app.default.taller-id:}")
+    private String defaultTallerId;
 
     public CategoriaController(CategoriaService categoriaService, AuthorizationService authorizationService) {
         this.categoriaService = categoriaService;
@@ -69,6 +76,8 @@ public class CategoriaController {
     @Operation(
         summary = "Buscar/listar categorías",
         description = "Busca categorías por nombre o lista categorías de un taller. Por defecto `tallerId` es obligatorio; usar `todas=true` sólo si se es platform-admin para obtener todas las categorías.",
+        // Indicar que esta operación es pública (no requiere seguridad) para que los clientes Android puedan consumirla sin token
+        security = {},
         parameters = {
             @io.swagger.v3.oas.annotations.Parameter(name = "q", description = "Término de búsqueda para nombre de categoría", example = "filtro"),
             @io.swagger.v3.oas.annotations.Parameter(name = "page", description = "Número de página", example = "0"),
@@ -90,6 +99,7 @@ public class CategoriaController {
                                     @RequestParam(required = false, defaultValue = "20") int size,
                                     @RequestParam(required = false) String tallerId,
                                     @RequestParam(required = false, defaultValue = "false") boolean todas) {
+        logger.info("GET /api/categorias called with q='{}' tallerId='{}' page={} size={} todas={}", q, tallerId, page, size, todas);
         // búsqueda por nombre
         if (q != null && !q.isBlank()) {
             var res = categoriaService.buscarPorNombrePaginado(q, page, size);
@@ -99,17 +109,37 @@ public class CategoriaController {
         if (todas) {
             org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
             String caller = auth == null ? null : auth.getName();
-            if (!authorizationService.isPlatformAdmin(caller)) return ResponseEntity.status(403).body(Map.of("error","Permisos insuficientes"));
-            return ResponseEntity.ok(categoriaService.listarTodasLasCategorias(page, size));
+            // Si es platform-admin devolvemos todas las categorías (globales + talleres).
+            if (authorizationService.isPlatformAdmin(caller)) {
+                return ResponseEntity.ok(categoriaService.listarTodasLasCategorias(page, size));
+            }
+            // Para callers no-admin (incluye anónimos) devolvemos únicamente las categorías globales
+            // para que clientes públicos (apps móviles) puedan mostrar categorías sin autenticación.
+            logger.info("Non-admin caller '{}' requested todas=true — returning global categories instead of denying access", caller);
+            return ResponseEntity.ok(categoriaService.listarCategoriasGlobales(page, size));
         }
         // Por defecto, requerimos tallerId para listar categorías (las categorías pertenecen a talleres)
         if (tallerId == null || tallerId.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error","tallerId es obligatorio para listar categorías"));
+            // Si no se proporcionó tallerId y no hay término de búsqueda ni flag 'todas',
+            // devolvemos las categorías globales para permitir que clientes públicos
+            // vean categorías tipo catálogo (comportamiento tipo marketplace/public).
+            logger.info("No tallerId provided — returning global categories (public) for listing");
+            var globals = categoriaService.listarCategoriasGlobales(page, size);
+            // si no hay categorias globales y se configuró un defaultTallerId, usamos ese taller
+            java.util.List<?> cats = (java.util.List<?>) globals.getOrDefault("categorias", java.util.List.of());
+            if ((cats == null || cats.isEmpty()) && defaultTallerId != null && !defaultTallerId.isBlank()) {
+                logger.info("Global categories empty — falling back to defaultTallerId='{}'", defaultTallerId);
+                return ResponseEntity.ok(categoriaService.listarCategoriasPorTaller(defaultTallerId, page, size));
+            }
+            return ResponseEntity.ok(globals);
         }
         return ResponseEntity.ok(categoriaService.listarCategoriasPorTaller(tallerId, page, size));
     }
 
-    @Operation(summary = "Obtener categoría", responses = {@ApiResponse(responseCode = "200", description = "Categoría encontrada", content = @Content),
+    @Operation(summary = "Obtener categoría",
+        // marcar como pública en OpenAPI
+        security = {},
+        responses = {@ApiResponse(responseCode = "200", description = "Categoría encontrada", content = @Content),
         @ApiResponse(responseCode = "404", description = "No encontrada", content = @Content)})
     @GetMapping("/{id}")
     public ResponseEntity<?> getCategoria(@PathVariable String id) {
