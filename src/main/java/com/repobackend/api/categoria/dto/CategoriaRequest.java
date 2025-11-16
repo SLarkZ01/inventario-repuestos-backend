@@ -1,5 +1,8 @@
 package com.repobackend.api.categoria.dto;
 
+import java.util.List;
+import java.util.Map;
+
 import jakarta.validation.constraints.NotBlank;
 
 public class CategoriaRequest {
@@ -13,6 +16,9 @@ public class CategoriaRequest {
     private Integer iconoRecurso;
     private String tallerId;
     private String mappedGlobalCategoryId;
+
+    // soportar lista de medios (imagenes) opcional
+    private List<Map<String, Object>> listaMedios;
 
     public String getIdString() {
         return idString;
@@ -61,4 +67,7 @@ public class CategoriaRequest {
     public void setMappedGlobalCategoryId(String mappedGlobalCategoryId) {
         this.mappedGlobalCategoryId = mappedGlobalCategoryId == null ? null : mappedGlobalCategoryId.trim();
     }
+
+    public List<Map<String, Object>> getListaMedios() { return listaMedios; }
+    public void setListaMedios(List<Map<String, Object>> listaMedios) { this.listaMedios = listaMedios; }
 }

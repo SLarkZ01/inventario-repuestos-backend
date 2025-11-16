@@ -22,6 +22,8 @@ import com.repobackend.api.producto.model.Producto;
 import com.repobackend.api.producto.repository.ProductoRepository;
 import com.repobackend.api.stock.service.StockService;
 import com.repobackend.api.auth.service.AuthorizationService;
+import com.repobackend.api.cloud.service.CloudinaryService;
+import com.repobackend.api.media.MediaSanitizer;
 
 @Service
 public class ProductoService {
@@ -29,12 +31,14 @@ public class ProductoService {
     private final MongoTemplate mongoTemplate;
     private final StockService stockService;
     private final AuthorizationService authorizationService;
+    private final CloudinaryService cloudinaryService;
 
-    public ProductoService(ProductoRepository productoRepository, MongoTemplate mongoTemplate, StockService stockService, AuthorizationService authorizationService) {
+    public ProductoService(ProductoRepository productoRepository, MongoTemplate mongoTemplate, StockService stockService, AuthorizationService authorizationService, CloudinaryService cloudinaryService) {
         this.productoRepository = productoRepository;
         this.mongoTemplate = mongoTemplate;
         this.stockService = stockService;
         this.authorizationService = authorizationService;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('VENDEDOR')")
@@ -56,7 +60,9 @@ public class ProductoService {
         Number imagen = (Number) body.getOrDefault("imagenRecurso", null);
         if (imagen != null) p.setImagenRecurso(imagen.intValue());
         Object lm = body.get("listaMedios");
-        if (lm instanceof List) p.setListaMedios((List<java.util.Map<String, Object>>) lm);
+        if (lm instanceof List) {
+            p.setListaMedios(MediaSanitizer.sanitize((List<java.util.Map<String, Object>>) lm));
+        }
         p.setCreadoEn(new Date());
         // set owner from authentication if available
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -109,7 +115,7 @@ public class ProductoService {
         p.setStock(s == null ? 0 : s);
         p.setCategoriaId(req.getCategoriaId());
         p.setImagenRecurso(req.getImagenRecurso());
-        p.setListaMedios(req.getListaMedios());
+        p.setListaMedios(req.getListaMedios() == null ? null : MediaSanitizer.sanitize(req.getListaMedios()));
         p.setSpecs(req.getSpecs());
         return p;
     }
@@ -208,7 +214,7 @@ public class ProductoService {
         }
         if (body.containsKey("listaMedios")) {
             Object lm = body.get("listaMedios");
-            if (lm instanceof List) p.setListaMedios((List<java.util.Map<String, Object>>) lm);
+            if (lm instanceof List) p.setListaMedios(MediaSanitizer.sanitize((List<java.util.Map<String, Object>>) lm));
         }
         Producto saved = productoRepository.save(p);
         return Map.of("producto", saved);
@@ -226,7 +232,7 @@ public class ProductoService {
         if (req.getStock() != null) p.setStock(req.getStock());
         if (req.getCategoriaId() != null) p.setCategoriaId(req.getCategoriaId());
         if (req.getImagenRecurso() != null) p.setImagenRecurso(req.getImagenRecurso());
-        if (req.getListaMedios() != null) p.setListaMedios(req.getListaMedios());
+        if (req.getListaMedios() != null) p.setListaMedios(MediaSanitizer.sanitize(req.getListaMedios()));
         if (req.getSpecs() != null) p.setSpecs(req.getSpecs());
         Producto saved = productoRepository.save(p);
         return Map.of("producto", toResponse(saved));
@@ -275,6 +281,27 @@ public class ProductoService {
     public Map<String, Object> eliminarProducto(String id) {
         Optional<Producto> maybe = productoRepository.findById(id);
         if (maybe.isEmpty()) return Map.of("error", "Producto no encontrado");
+        Producto p = maybe.get();
+        // Intentar eliminar los recursos en Cloudinary (si existen publicId registrados)
+        try {
+            if (p.getListaMedios() != null) {
+                for (var m : p.getListaMedios()) {
+                    Object publicId = m.get("publicId");
+                    if (publicId instanceof String) {
+                        try {
+                            cloudinaryService.destroy((String) publicId);
+                        } catch (Exception e) {
+                            // No interrumpir la eliminación del documento si falla la limpieza remota
+                            // Loguear la excepción para revisión (usar slf4j si disponible)
+                            System.err.println("Warning: fallo al eliminar recurso Cloudinary publicId=" + publicId + " -> " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            // proteger: cualquier excepción inesperada no debe impedir la eliminación del documento
+            System.err.println("Warning: error al intentar limpiar recursos Cloudinary: " + ex.getMessage());
+        }
         productoRepository.deleteById(id);
         return Map.of("deleted", true);
     }

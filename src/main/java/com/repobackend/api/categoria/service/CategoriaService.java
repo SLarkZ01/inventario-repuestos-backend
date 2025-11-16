@@ -43,6 +43,11 @@ public class CategoriaService {
         // optional tallerId for local categories
         if (body.containsKey("tallerId")) c.setTallerId((String) body.get("tallerId"));
         if (body.containsKey("mappedGlobalCategoryId")) c.setMappedGlobalCategoryId((String) body.get("mappedGlobalCategoryId"));
+        // listaMedios opcional (aceptar si viene desde cliente)
+        if (body.containsKey("listaMedios")) {
+            Object lm = body.get("listaMedios");
+            if (lm instanceof List) c.setListaMedios((List<java.util.Map<String, Object>>) lm);
+        }
         c.setCreadoEn(new Date());
         // Authorization: if local category (has tallerId) require membership; if global (no tallerId) require admin
         org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
@@ -94,6 +99,8 @@ public class CategoriaService {
         c.setIconoRecurso(req.getIconoRecurso());
         c.setTallerId(req.getTallerId());
         c.setMappedGlobalCategoryId(req.getMappedGlobalCategoryId());
+        // copiar lista de medios si se provee
+        if (req.getListaMedios() != null) c.setListaMedios(req.getListaMedios());
         return c;
     }
 
@@ -107,6 +114,8 @@ public class CategoriaService {
         r.setTallerId(c.getTallerId());
         r.setMappedGlobalCategoryId(c.getMappedGlobalCategoryId());
         r.setCreadoEn(c.getCreadoEn());
+        // exponer lista de medios
+        r.setListaMedios(c.getListaMedios());
         return r;
     }
 
@@ -172,6 +181,10 @@ public class CategoriaService {
         if (body.containsKey("iconoRecurso")) {
             Number n = (Number) body.get("iconoRecurso");
             c.setIconoRecurso(n == null ? null : n.intValue());
+        }
+        if (body.containsKey("listaMedios")) {
+            Object lm = body.get("listaMedios");
+            if (lm instanceof List) c.setListaMedios((List<java.util.Map<String, Object>>) lm);
         }
         Categoria saved = categoriaRepository.save(c);
         return Map.of("categoria", saved);

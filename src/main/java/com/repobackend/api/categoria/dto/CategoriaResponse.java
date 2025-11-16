@@ -1,6 +1,8 @@
 package com.repobackend.api.categoria.dto;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 public class CategoriaResponse {
     private String id;
@@ -11,6 +13,9 @@ public class CategoriaResponse {
     private String tallerId;
     private String mappedGlobalCategoryId;
     private Date creadoEn;
+
+    // lista de medios (imagenes)
+    private List<Map<String, Object>> listaMedios;
 
     public String getId() {
         return id;
@@ -65,4 +70,7 @@ public class CategoriaResponse {
     public void setCreadoEn(Date creadoEn) {
         this.creadoEn = creadoEn;
     }
+
+    public List<Map<String, Object>> getListaMedios() { return listaMedios; }
+    public void setListaMedios(List<Map<String, Object>> listaMedios) { this.listaMedios = listaMedios; }
 }

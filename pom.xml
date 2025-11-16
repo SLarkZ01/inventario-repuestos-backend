@@ -107,6 +107,8 @@
             <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
 
+        <!-- (Se elimina dependencia Cloudinary y commons-codec porque usamos HttpClient y MessageDigest nativos) -->
+
     </dependencies>
 
     <!-- Forzar versiones de swagger-core compatibles con Spring Boot 3.3.x -->

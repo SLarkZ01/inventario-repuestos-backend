@@ -1,6 +1,8 @@
 package com.repobackend.api.categoria.model;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
@@ -23,6 +25,9 @@ public class Categoria {
     private String tallerId; // null => global category; otherwise local to taller
     @Indexed
     private String mappedGlobalCategoryId; // optional mapping to global category
+
+    // Lista de medios (ej. imagenes) similar a Producto
+    private List<Map<String, Object>> listaMedios;
 
     private Date creadoEn = new Date();
 
@@ -49,4 +54,7 @@ public class Categoria {
 
     public Date getCreadoEn() { return creadoEn; }
     public void setCreadoEn(Date creadoEn) { this.creadoEn = creadoEn; }
+
+    public List<Map<String, Object>> getListaMedios() { return listaMedios; }
+    public void setListaMedios(List<Map<String, Object>> listaMedios) { this.listaMedios = listaMedios; }
 }
