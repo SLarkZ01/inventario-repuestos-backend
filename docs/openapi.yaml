@@ -227,7 +227,8 @@ paths:
       tags:
       - Productos
       summary: Obtener producto por ID
-      description: Devuelve los detalles completos de un producto
+      description: Devuelve los detalles completos de un producto (incluye `listaMedios`
+        si existen)
       operationId: getProducto
       parameters:
       - name: id
@@ -249,6 +250,9 @@ paths:
                   precio: 25.5
                   stock: 100
                   categoriaId: 507f1f77bcf86cd799439011
+                  listaMedios:
+                  - publicId: products/507f1f77/abc123
+                    secure_url: https://res.cloudinary.com/df7ggzasi/...
         '404':
           description: Producto no encontrado
     put:
@@ -746,10 +750,13 @@ paths:
       tags:
       - Productos
       summary: Crear producto
-      description: Crea un nuevo producto en el inventario
+      description: Crea un nuevo producto en el inventario. Para imágenes se recomienda
+        subir a Cloudinary desde el cliente usando el endpoint de firma y enviar en
+        `listaMedios` objetos con campos `publicId` y `secure_url`.
       operationId: crearProducto
       requestBody:
-        description: Datos del producto
+        description: Datos del producto (incluir `tallerId`). `listaMedios` ejemplo
+          incluido.
         content:
           application/json:
             schema:
@@ -764,10 +771,15 @@ paths:
                   stock: 100
                   categoriaId: 507f1f77bcf86cd799439011
                   tallerId: 507f1f77bcf86cd799439777
+                  listaMedios:
+                  - type: image
+                    publicId: products/507f1f77/abc123
+                    secure_url: https://res.cloudinary.com/df7ggzasi/image/upload/v1/products/abc123.jpg
+                    format: jpg
+                    order: 0
                   specs:
                     Marca: Yamaha
                     Modelo: YZF-R15
-                    Compatibilidad: 150cc
         required: true
       responses:
         '201':
@@ -1022,7 +1034,9 @@ paths:
       tags:
       - Categorias
       summary: Buscar/listar categorías
-      description: Busca categorías por nombre o lista categorías globales o por taller.
+      description: Busca categorías por nombre o lista categorías de un taller. Por
+        defecto `tallerId` es obligatorio; usar `todas=true` sólo si se es platform-admin
+        para obtener todas las categorías.
       operationId: listar_2
       parameters:
       - name: q
@@ -1052,25 +1066,19 @@ paths:
         example: 20
       - name: tallerId
         in: query
-        description: ID del taller para listar categorías locales
-        required: false
+        description: ID del taller (obligatorio para listar)
+        required: true
         schema:
           type: string
         example: 507f1f77bcf86cd799439777
-      - name: global
+      - name: todas
         in: query
-        description: Si true devuelve solo categorías globales (tallerId == null)
+        description: Si true y el caller es platform-admin devuelve todas las categorías
         required: false
         schema:
           type: boolean
           default: false
         example: false
-      - name: todas
-        in: query
-        required: false
-        schema:
-          type: boolean
-          default: false
       responses:
         '200':
           description: Lista de categorías
@@ -1080,16 +1088,22 @@ paths:
                 categorias:
                 - id: 507f1f77bcf86cd799439011
                   nombre: Filtros
-                  tallerId: null
+                  tallerId: 507f1f77bcf86cd799439777
+                  listaMedios:
+                  - publicId: products/507f1f77/abc123
+                    secure_url: https://res.cloudinary.com/...
                 total: 1
     post:
       tags:
       - Categorias
       summary: Crear categoría
-      description: Crea una nueva categoría de productos
+      description: 'Crea una nueva categoría de productos. Nota: `tallerId` es obligatorio
+        ya que todas las categorías pertenecen a un taller.'
       operationId: crearCategoria
       requestBody:
-        description: Datos de la categoría
+        description: 'Datos de la categoría (tallerId obligatorio). `listaMedios`
+          acepta una lista de objetos con campos: type, publicId, secure_url, format,
+          order.'
         content:
           application/json:
             schema:
@@ -1102,7 +1116,12 @@ paths:
                   descripcion: Filtros de aceite, aire y combustible
                   iconoRecurso: 2131230988
                   tallerId: 507f1f77bcf86cd799439777
-                  mappedGlobalCategoryId: null
+                  listaMedios:
+                  - type: image
+                    publicId: products/507f1f77/abc123
+                    secure_url: https://res.cloudinary.com/df7ggzasi/image/upload/v1/products/abc123.jpg
+                    format: jpg
+                    order: 0
         required: true
       responses:
         '201':
@@ -1113,9 +1132,12 @@ paths:
                 categoria:
                   id: 507f1f77bcf86cd799439011
                   nombre: Filtros
-                  tallerId: null
+                  tallerId: 507f1f77bcf86cd799439777
+                  listaMedios:
+                  - publicId: products/507f1f77/abc123
+                    secure_url: https://res.cloudinary.com/...
         '400':
-          description: Datos inválidos
+          description: Datos inválidos (p.ej. falta tallerId)
   /api/carritos:
     get:
       tags:
@@ -1887,6 +1909,7 @@ components:
     CategoriaRequest:
       required:
       - nombre
+      - tallerId
       type: object
       properties:
         idString:
