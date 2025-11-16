@@ -45,25 +45,58 @@ public class CategoriaController {
 
     @Operation(
         summary = "Crear categoría",
-        description = "Crea una nueva categoría de productos. Nota: `tallerId` es obligatorio ya que todas las categorías pertenecen a un taller.",
+        description = """
+            Crea una nueva categoría de productos.
+            
+            **IMPORTANTE:**
+            - `tallerId` es REQUERIDO para crear categorías (validación en el servicio)
+            - Si no se proporciona `tallerId`, el backend devolverá: {"error": "tallerId es obligatorio para crear una categoría"}
+            
+            **Gestión de Imágenes:**
+            - Las imágenes DEBEN subirse primero a Cloudinary usando `/api/uploads/cloudinary-sign`
+            - Cada objeto en `listaMedios` DEBE incluir el campo `publicId` (CRÍTICO para eliminar imágenes al borrar la categoría)
+            - Sin `publicId`, las imágenes quedarán huérfanas en Cloudinary y no se podrán eliminar automáticamente
+            
+            **Estructura de `listaMedios`:**
+            - Cada elemento debe tener: {type, publicId, secure_url, format, width, height, order}
+            - El campo `publicId` es retornado por Cloudinary como `public_id` al subir la imagen
+            
+            **Flujo recomendado para imágenes:**
+            1. Obtener firma: POST /api/uploads/cloudinary-sign con {folder: "products"}
+            2. Subir a Cloudinary con la firma obtenida
+            3. Guardar en `listaMedios` el objeto completo que devuelve Cloudinary (especialmente `public_id`)
+            """,
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Datos de la categoría (tallerId obligatorio). `listaMedios` acepta una lista de objetos con campos: type, publicId, secure_url, format, order.",
+            description = """
+                Datos de la categoría.
+                **REQUERIDO**: `nombre` y `tallerId` (el backend validará que `tallerId` esté presente)
+                **CRÍTICO**: Si incluyes `listaMedios`, cada medio DEBE tener `publicId` para poder eliminar las imágenes de Cloudinary.
+                """,
             required = true,
             content = @Content(
                 mediaType = "application/json",
                 examples = @ExampleObject(
-                    name = "Ejemplo de categoría",
-                    value = "{\"nombre\":\"Filtros\",\"descripcion\":\"Filtros de aceite, aire y combustible\",\"iconoRecurso\":2131230988,\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image\",\"publicId\":\"products/507f1f77/abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1/products/abc123.jpg\",\"format\":\"jpg\",\"order\":0}]}"
+                    name = "Ejemplo de categoría completa",
+                    value = "{\"nombre\":\"Filtros\",\"descripcion\":\"Filtros de aceite, aire y combustible\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image/jpeg\",\"publicId\":\"products/507f1f77/categoria-filtros-abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763282466/products/507f1f77/categoria-filtros-abc123.jpg\",\"url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763282466/products/507f1f77/categoria-filtros-abc123.jpg\",\"format\":\"jpg\",\"width\":800,\"height\":600,\"order\":0}],\"mappedGlobalCategoryId\":\"global-cat-filtros\"}"
                 )
             )
         ),
         responses = {
             @ApiResponse(responseCode = "201", description = "Categoría creada exitosamente",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"categoria\":{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"publicId\":\"products/507f1f77/abc123\",\"secure_url\":\"https://res.cloudinary.com/...\"}]}}")
+                    examples = @ExampleObject(value = "{\"categoria\":{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros\",\"descripcion\":\"Filtros de aceite, aire y combustible\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image/jpeg\",\"publicId\":\"products/507f1f77/categoria-filtros-abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763282466/products/507f1f77/categoria-filtros-abc123.jpg\"}]}}")
                 )
             ),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos (p.ej. falta tallerId)", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Datos inválidos (ej: falta tallerId, nombre vacío, o error de validación)",
+                content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = "{\"error\":\"tallerId es obligatorio para crear una categoría\"}")
+                )
+            ),
+            @ApiResponse(responseCode = "403", description = "Permisos insuficientes",
+                content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = "{\"error\":\"Permisos insuficientes para crear categoría en este taller\"}")
+                )
+            )
         }
     )
     @PostMapping
@@ -129,11 +162,33 @@ public class CategoriaController {
         return ResponseEntity.ok(categoriaService.listarCategoriasPorTaller(tallerId, page, size));
     }
 
-    @Operation(summary = "Obtener categoría",
+    @Operation(
+        summary = "Obtener categoría por ID",
+        description = """
+            Devuelve los detalles completos de una categoría.
+            
+            **La respuesta incluye:**
+            - Datos básicos (nombre, descripción)
+            - `tallerId`: ID del taller propietario
+            - `listaMedios`: Array con imágenes (cada una con publicId, secure_url, etc.)
+            - `mappedGlobalCategoryId`: ID de categoría global (si existe)
+            
+            **Nota:** Este endpoint es público (no requiere autenticación)
+            """,
+        parameters = {
+            @io.swagger.v3.oas.annotations.Parameter(name = "id", description = "ID de la categoría", required = true, example = "507f1f77bcf86cd799439011")
+        },
         // marcar como pública en OpenAPI
         security = {},
-        responses = {@ApiResponse(responseCode = "200", description = "Categoría encontrada", content = @Content),
-        @ApiResponse(responseCode = "404", description = "No encontrada", content = @Content)})
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Categoría encontrada",
+                content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = "{\"categoria\":{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros\",\"descripcion\":\"Filtros de aceite, aire y combustible\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image/jpeg\",\"publicId\":\"products/507f1f77/categoria-filtros-abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763282466/products/507f1f77/categoria-filtros-abc123.jpg\",\"format\":\"jpg\",\"width\":800,\"height\":600,\"order\":0}],\"mappedGlobalCategoryId\":\"global-cat-filtros\"}}")
+                )
+            ),
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada", content = @Content)
+        }
+    )
     @GetMapping("/{id}")
     public ResponseEntity<?> getCategoria(@PathVariable String id) {
         var maybe = categoriaService.getById(id);
@@ -141,8 +196,55 @@ public class CategoriaController {
         return ResponseEntity.ok(Map.of("categoria", maybe.get()));
     }
 
-    @Operation(summary = "Actualizar categoría", responses = {@ApiResponse(responseCode = "200", description = "Categoría actualizada", content = @Content),
-        @ApiResponse(responseCode = "404", description = "No encontrada", content = @Content)})
+    @Operation(
+        summary = "Actualizar categoría",
+        description = """
+            Actualiza los datos de una categoría. Envía solo los campos que deseas actualizar.
+            
+            **IMPORTANTE sobre `listaMedios`:**
+            - Si actualizas `listaMedios`, DEBE incluir `publicId` en cada medio
+            - Al actualizar, se reemplazan las imágenes anteriores (las viejas se eliminan de Cloudinary automáticamente)
+            - Para agregar nuevas imágenes manteniendo las existentes, primero obtén la categoría actual y agrega a su array
+            
+            **Campos actualizables:**
+            - `nombre`: Nombre de la categoría
+            - `descripcion`: Descripción
+            - `tallerId`: ID del taller (normalmente no se cambia)
+            - `listaMedios`: Array de medios (DEBE incluir publicId)
+            - `mappedGlobalCategoryId`: ID de categoría global
+            """,
+        parameters = {
+            @io.swagger.v3.oas.annotations.Parameter(name = "id", description = "ID de la categoría", required = true, example = "507f1f77bcf86cd799439011")
+        },
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = """
+                Datos actualizados de la categoría (solo enviar los campos a modificar).
+                Si actualizas `listaMedios`, DEBE incluir `publicId` en cada elemento.
+                """,
+            content = @Content(
+                mediaType = "application/json",
+                examples = {
+                    @ExampleObject(
+                        name = "Actualizar nombre y descripción",
+                        value = "{\"nombre\":\"Filtros Premium\",\"descripcion\":\"Filtros de alta calidad para motos\"}"
+                    ),
+                    @ExampleObject(
+                        name = "Actualizar con nueva imagen",
+                        value = "{\"nombre\":\"Filtros Premium\",\"listaMedios\":[{\"type\":\"image/jpeg\",\"publicId\":\"products/nueva-categoria-xyz789\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763285500/products/nueva-categoria-xyz789.jpg\",\"format\":\"jpg\",\"order\":0}]}"
+                    )
+                }
+            )
+        ),
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Categoría actualizada exitosamente",
+                content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = "{\"categoria\":{\"id\":\"507f1f77bcf86cd799439011\",\"nombre\":\"Filtros Premium\",\"descripcion\":\"Filtros de alta calidad para motos\"}}")
+                )
+            ),
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
+        }
+    )
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizarCategoria(@PathVariable String id, @jakarta.validation.Valid @RequestBody CategoriaRequest body) {
         var r = categoriaService.actualizarCategoria(id, body);
@@ -150,8 +252,33 @@ public class CategoriaController {
         return ResponseEntity.ok(r);
     }
 
-    @Operation(summary = "Eliminar categoría", responses = {@ApiResponse(responseCode = "200", description = "Eliminada", content = @Content),
-        @ApiResponse(responseCode = "404", description = "No encontrada", content = @Content)})
+    @Operation(
+        summary = "Eliminar categoría",
+        description = """
+            Elimina una categoría por ID.
+            
+            **IMPORTANTE:** 
+            - También elimina automáticamente las imágenes asociadas de Cloudinary (si existen en `listaMedios` con `publicId`)
+            - Si la categoría tiene productos asociados, puede fallar (dependiendo de la lógica de negocio)
+            - Esta acción no se puede deshacer
+            
+            **Limpieza automática:**
+            - Todas las imágenes en `listaMedios` que tengan `publicId` serán eliminadas de Cloudinary
+            - Si alguna imagen no tiene `publicId`, quedará huérfana en Cloudinary
+            """,
+        parameters = {
+            @io.swagger.v3.oas.annotations.Parameter(name = "id", description = "ID de la categoría a eliminar", required = true, example = "507f1f77bcf86cd799439011")
+        },
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Categoría eliminada exitosamente (y sus medios de Cloudinary)",
+                content = @Content(mediaType = "application/json",
+                    examples = @ExampleObject(value = "{\"deleted\":true,\"id\":\"507f1f77bcf86cd799439011\"}")
+                )
+            ),
+            @ApiResponse(responseCode = "404", description = "Categoría no encontrada", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Sin permisos para eliminar esta categoría", content = @Content)
+        }
+    )
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminar(@PathVariable String id) {
         var r = categoriaService.eliminarCategoria(id);

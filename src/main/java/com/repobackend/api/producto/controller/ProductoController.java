@@ -37,25 +37,46 @@ public class ProductoController {
 
     @Operation(
         summary = "Crear producto",
-        description = "Crea un nuevo producto en el inventario. Para imágenes se recomienda subir a Cloudinary desde el cliente usando el endpoint de firma y enviar en `listaMedios` objetos con campos `publicId` y `secure_url`.",
+        description = """
+            Crea un nuevo producto en el inventario.
+            
+            **IMPORTANTE - Gestión de Imágenes:**
+            - Las imágenes DEBEN subirse primero a Cloudinary usando `/api/uploads/cloudinary-sign`
+            - Cada objeto en `listaMedios` DEBE incluir el campo `publicId` (CRÍTICO para eliminar imágenes al borrar el producto)
+            - Sin `publicId`, las imágenes quedarán huérfanas en Cloudinary y no se podrán eliminar automáticamente
+            
+            **Campos recomendados:**
+            - `tallerId`: Asocia el producto a un taller específico (recomendado para multi-tenant)
+            - `specs`: Mapa de especificaciones técnicas (ej: {"Marca":"Yamaha", "Modelo":"R15", "Peso":"0.2kg"})
+            - `listaMedios`: Array de objetos con estructura: {type, publicId, secure_url, format, width, height, order}
+            
+            **Flujo recomendado para imágenes:**
+            1. Obtener firma: POST /api/uploads/cloudinary-sign con {folder: "products"}
+            2. Subir a Cloudinary con la firma obtenida
+            3. Guardar en `listaMedios` el objeto completo que devuelve Cloudinary (especialmente `public_id`)
+            """,
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Datos del producto (incluir `tallerId`). `listaMedios` ejemplo incluido.",
+            description = """
+                Datos del producto. 
+                **CRÍTICO**: Si incluyes `listaMedios`, cada medio DEBE tener `publicId` para poder eliminar las imágenes de Cloudinary.
+                El campo `specs` es opcional pero recomendado para especificaciones técnicas.
+                """,
             required = true,
             content = @Content(
                 mediaType = "application/json",
                 examples = @ExampleObject(
-                    name = "Ejemplo de producto",
-                    value = "{\"nombre\":\"Filtro de Aceite Yamaha\",\"descripcion\":\"Filtro de aceite para motos Yamaha 150cc\",\"precio\":25.50,\"stock\":100,\"categoriaId\":\"507f1f77bcf86cd799439011\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image\",\"publicId\":\"products/507f1f77/abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1/products/abc123.jpg\",\"format\":\"jpg\",\"order\":0}],\"specs\":{\"Marca\":\"Yamaha\",\"Modelo\":\"YZF-R15\"}}"
+                    name = "Ejemplo de producto completo",
+                    value = "{\"nombre\":\"Filtro de Aceite Yamaha\",\"descripcion\":\"Filtro de aceite para motos Yamaha 150cc\",\"precio\":25.50,\"stock\":100,\"categoriaId\":\"507f1f77bcf86cd799439011\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image/jpeg\",\"publicId\":\"products/507f1f77/filtro-yamaha-abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg\",\"url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg\",\"format\":\"jpg\",\"width\":800,\"height\":600,\"order\":0}],\"specs\":{\"Marca\":\"Yamaha\",\"Modelo\":\"YZF-R15\",\"Compatibilidad\":\"150cc\",\"Material\":\"Papel\",\"Peso\":\"0.2kg\"}}"
                 )
             )
         ),
         responses = {
             @ApiResponse(responseCode = "201", description = "Producto creado exitosamente",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"producto\":{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro de Aceite Yamaha\",\"precio\":25.50,\"stock\":100}}")
+                    examples = @ExampleObject(value = "{\"producto\":{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro de Aceite Yamaha\",\"precio\":25.50,\"stock\":100,\"tallerId\":\"507f1f77bcf86cd799439777\"}}")
                 )
             ),
-            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
+            @ApiResponse(responseCode = "400", description = "Datos inválidos (ej: nombre vacío, stock negativo)", content = @Content)
         }
     )
     @PostMapping
@@ -105,14 +126,23 @@ public class ProductoController {
 
     @Operation(
         summary = "Obtener producto por ID",
-        description = "Devuelve los detalles completos de un producto (incluye `listaMedios` si existen)",
+        description = """
+            Devuelve los detalles completos de un producto.
+            
+            **La respuesta incluye:**
+            - Datos básicos (nombre, descripción, precio, stock)
+            - `listaMedios`: Array con imágenes (cada una con publicId, secure_url, etc.)
+            - `specs`: Objeto con especificaciones técnicas (si existen)
+            - `tallerId`: ID del taller propietario (si existe)
+            - `categoriaId`: ID de la categoría (si existe)
+            """,
         parameters = {
             @io.swagger.v3.oas.annotations.Parameter(name = "id", description = "ID del producto", required = true, example = "507f191e810c19729de860ea")
         },
         responses = {
             @ApiResponse(responseCode = "200", description = "Producto encontrado",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"producto\":{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro de Aceite Yamaha\",\"precio\":25.50,\"stock\":100,\"categoriaId\":\"507f1f77bcf86cd799439011\",\"listaMedios\":[{\"publicId\":\"products/507f1f77/abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/...\"}]}}")
+                    examples = @ExampleObject(value = "{\"producto\":{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro de Aceite Yamaha\",\"descripcion\":\"Filtro de aceite para motos Yamaha 150cc\",\"precio\":25.50,\"stock\":100,\"categoriaId\":\"507f1f77bcf86cd799439011\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image/jpeg\",\"publicId\":\"products/507f1f77/filtro-yamaha-abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg\",\"format\":\"jpg\",\"width\":800,\"height\":600,\"order\":0}],\"specs\":{\"Marca\":\"Yamaha\",\"Modelo\":\"YZF-R15\",\"Compatibilidad\":\"150cc\",\"Material\":\"Papel\",\"Peso\":\"0.2kg\"}}}")
                 )
             ),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado", content = @Content)
@@ -122,20 +152,44 @@ public class ProductoController {
     public ResponseEntity<?> getProducto(@PathVariable String id) {
         var maybe = productoService.getById(id);
         if (maybe.isEmpty()) return ResponseEntity.status(404).body(Map.of("error", "Producto no encontrado"));
-        return ResponseEntity.ok(Map.of("producto", maybe.get()));
+        var response = productoService.toResponse(maybe.get());
+        return ResponseEntity.ok(Map.of("producto", response));
     }
 
     @Operation(
         summary = "Actualizar producto",
-        description = "Actualiza los datos del producto. Envía solo los campos que deseas actualizar.",
+        description = """
+            Actualiza los datos del producto. Envía solo los campos que deseas actualizar.
+            
+            **IMPORTANTE sobre `listaMedios`:**
+            - Si actualizas `listaMedios`, DEBE incluir `publicId` en cada medio
+            - Al actualizar, se reemplazan las imágenes anteriores (las viejas se eliminan de Cloudinary automáticamente)
+            - Para agregar nuevas imágenes manteniendo las existentes, primero obtén el producto actual y agrega a su array
+            
+            **Nota sobre `specs`:**
+            - Al actualizar `specs`, se reemplaza el objeto completo (no se hace merge)
+            - Para actualizar una sola especificación, envía el objeto completo con el cambio
+            """,
         parameters = {
             @io.swagger.v3.oas.annotations.Parameter(name = "id", description = "ID del producto", required = true, example = "507f191e810c19729de860ea")
         },
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "Datos actualizados del producto",
+            description = """
+                Datos actualizados del producto (solo enviar los campos a modificar).
+                Si actualizas `listaMedios`, DEBE incluir `publicId` en cada elemento.
+                """,
             content = @Content(
                 mediaType = "application/json",
-                examples = @ExampleObject(value = "{\"nombre\":\"Filtro de Aceite Yamaha R15\",\"precio\":27.00,\"stock\":150}")
+                examples = {
+                    @ExampleObject(
+                        name = "Actualizar datos básicos",
+                        value = "{\"nombre\":\"Filtro de Aceite Yamaha R15\",\"precio\":27.00,\"stock\":150}"
+                    ),
+                    @ExampleObject(
+                        name = "Actualizar con nueva imagen",
+                        value = "{\"nombre\":\"Filtro de Aceite Yamaha R15\",\"listaMedios\":[{\"type\":\"image/jpeg\",\"publicId\":\"products/nuevo-filtro-xyz789\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763285500/products/nuevo-filtro-xyz789.jpg\",\"format\":\"jpg\",\"order\":0}]}"
+                    )
+                }
             )
         ),
         responses = {
@@ -144,7 +198,8 @@ public class ProductoController {
                     examples = @ExampleObject(value = "{\"producto\":{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro de Aceite Yamaha R15\",\"precio\":27.00}}")
                 )
             ),
-            @ApiResponse(responseCode = "404", description = "Producto no encontrado", content = @Content)
+            @ApiResponse(responseCode = "404", description = "Producto no encontrado", content = @Content),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
         }
     )
     @PutMapping("/{id}")

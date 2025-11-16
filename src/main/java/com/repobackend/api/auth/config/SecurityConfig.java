@@ -67,6 +67,8 @@ public class SecurityConfig {
             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/webjars/**").permitAll()
             // Public simplified categories endpoint used by mobile app
             .requestMatchers(HttpMethod.GET, "/api/public/categorias", "/api/public/categorias/**").permitAll()
+            // Public simplified products endpoint used by mobile app
+            .requestMatchers(HttpMethod.GET, "/api/public/productos", "/api/public/productos/**").permitAll()
             // Public product/catalog endpoints: permitir vista sin autenticación
             .requestMatchers(HttpMethod.GET, "/api/productos", "/api/productos/**").permitAll()
             // Public categories listing/details

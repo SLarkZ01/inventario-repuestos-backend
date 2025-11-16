@@ -14,7 +14,7 @@ public class CategoriaRequest {
     private String descripcion;
 
     private Integer iconoRecurso;
-    @NotBlank(message = "tallerId es obligatorio: las categorias ahora siempre pertenecen a un taller")
+    // tallerId ahora es obligatorio para nuevas categorías (pero nullable para migración de categorías globales legacy)
     private String tallerId;
     private String mappedGlobalCategoryId;
 

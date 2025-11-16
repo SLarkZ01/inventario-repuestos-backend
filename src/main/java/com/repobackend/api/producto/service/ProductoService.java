@@ -142,17 +142,31 @@ public class ProductoService {
         // Rellenar stock total y desglose por almacén desde StockService
         try {
             int total = stockService.getTotalStock(p.getId());
-            r.setTotalStock(total);
             var rows = stockService.getStockByProducto(p.getId());
             java.util.List<java.util.Map<String, Object>> breakdown = new java.util.ArrayList<>();
             for (var s : rows) {
                 breakdown.add(java.util.Map.of("almacenId", s.getAlmacenId(), "cantidad", s.getCantidad()));
             }
             r.setStockByAlmacen(breakdown);
+
+            // Si no hay stock en almacenes pero el producto tiene stock legacy, usar ese como fallback
+            if (total == 0 && (p.getStock() != null && p.getStock() > 0)) {
+                r.setTotalStock(p.getStock());
+                logger.debug("Producto {} sin stock en almacenes, usando stock legacy: {}", p.getId(), p.getStock());
+            } else {
+                r.setTotalStock(total);
+            }
         } catch (Exception ex) {
-            // en caso de fallo al obtener stock, dejar campos nulos y no fallar la respuesta
-            r.setTotalStock(null);
-            r.setStockByAlmacen(null);
+            // En caso de fallo al obtener stock de almacenes, usar stock del producto si existe
+            if (p.getStock() != null && p.getStock() > 0) {
+                r.setTotalStock(p.getStock());
+                r.setStockByAlmacen(java.util.List.of());
+                logger.warn("Error al obtener stock de almacenes para producto {}, usando stock legacy: {}", p.getId(), p.getStock(), ex);
+            } else {
+                r.setTotalStock(0);
+                r.setStockByAlmacen(java.util.List.of());
+                logger.error("Error al obtener stock para producto {} y no hay stock legacy: {}", p.getId(), ex.getMessage());
+            }
         }
         r.setCreadoEn(p.getCreadoEn());
         return r;
