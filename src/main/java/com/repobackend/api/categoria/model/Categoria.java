@@ -19,7 +19,7 @@ public class Categoria {
     private String idString;
     private String nombre;
     private String descripcion;
-    // Asegurar valor por defecto para cumplir validación del schema en Mongo
+    //Asegurar valor por defecto para cumplir validación del schema en Mongo
     private Integer iconoRecurso = 0;
 
     @Indexed
