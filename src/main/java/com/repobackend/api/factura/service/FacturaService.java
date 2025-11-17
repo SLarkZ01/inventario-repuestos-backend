@@ -26,6 +26,7 @@ import com.repobackend.api.factura.repository.FacturaRepository;
 import com.repobackend.api.auth.repository.UserRepository;
 import com.repobackend.api.stock.service.StockService;
 import com.repobackend.api.producto.model.Producto;
+import org.bson.types.ObjectId;
 
 @Service
 public class FacturaService {
@@ -56,6 +57,8 @@ public class FacturaService {
         // reuse existing Map-based logic by mapping request to entity then saving
         try {
             Factura f = toEntity(req);
+            // Validación mínima requerida (placeholder DIAN): número, fecha, cliente e ítems
+            validarMinimoFactura(f);
             // if cliente or clienteId provided but no numeroFactura, generate it
             if (f.getNumeroFactura() == null || f.getNumeroFactura().isBlank()) {
                 long seq = sequenceGeneratorService.generateSequence("factura");
@@ -69,6 +72,42 @@ public class FacturaService {
             logger.error("Error creando factura DTO: {}", ex.getMessage(), ex);
             throw new RuntimeException("Error al crear factura: " + ex.getMessage());
         }
+    }
+
+    /**
+     * Crear factura directamente desde un request (admin/vendedor) con opción de descontar stock.
+     * Si descontarStock es true, reutiliza la lógica de checkout para validar y decrementar existencias.
+     */
+    @Transactional
+    public FacturaResponse crearFactura(FacturaRequest req, boolean descontarStock) {
+        if (!descontarStock) return crearFactura(req);
+        // Preparar mapa productoId -> cantidad y usar StockService para decrementar por almacenes
+        java.util.Map<String, Integer> cantidadesPorProducto = new java.util.HashMap<>();
+        if (req.getItems() == null || req.getItems().isEmpty()) throw new IllegalArgumentException("La factura debe tener items");
+        for (var it : req.getItems()) {
+            if (it.getCantidad() == null || it.getCantidad() <= 0) throw new IllegalArgumentException("Cantidad inválida en item");
+            cantidadesPorProducto.merge(it.getProductoId(), it.getCantidad(), Integer::sum);
+        }
+        // validar y ajustar stock
+        for (var e : cantidadesPorProducto.entrySet()) {
+            String productoId = e.getKey();
+            int remaining = e.getValue();
+            var stockRows = stockService.getStockByProducto(productoId);
+            for (var row : stockRows) {
+                if (remaining <= 0) break;
+                int available = row.getCantidad() == null ? 0 : row.getCantidad();
+                if (available <= 0) continue;
+                int take = Math.min(available, remaining);
+                var res = stockService.adjustStock(productoId, row.getAlmacenId(), -take, req.getRealizadoPor(), false);
+                if (res.containsKey("error")) {
+                    throw new IllegalStateException("Error ajustando stock: " + res.get("error"));
+                }
+                remaining -= take;
+            }
+            if (remaining > 0) throw new IllegalStateException("Stock insuficiente para producto: " + productoId);
+        }
+        // Guardar factura como en crearFactura(req)
+        return crearFactura(req);
     }
 
     /**
@@ -256,7 +295,13 @@ public class FacturaService {
     }
 
     public List<Factura> listarPorUsuario(String userId) {
-        return facturaRepository.findByRealizadoPor(userId);
+        try {
+            ObjectId oid = new ObjectId(userId);
+            return facturaRepository.findByRealizadoPor(oid);
+        } catch (IllegalArgumentException iae) {
+            // userId inválido devuelve lista vacía para no romper API
+            return java.util.List.of();
+        }
     }
 
     // Mapping helpers
@@ -316,6 +361,14 @@ public class FacturaService {
         f.setEstado(req.getEstado() == null ? "CREADA" : req.getEstado());
         f.setCreadoEn(new Date());
         return f;
+    }
+
+    private void validarMinimoFactura(Factura f) {
+        if (f.getItems() == null || f.getItems().isEmpty()) throw new IllegalArgumentException("La factura debe tener items");
+        if (f.getCliente() == null && (f.getClienteId() == null || f.getClienteId().isBlank())) {
+            // Para DIAN eventualmente se exigirá NIT/CC y dirección; aquí solo aseguramos que exista cliente
+            logger.warn("Factura sin snapshot de cliente; considere enviar clienteId o cliente embebido para requisitos DIAN");
+        }
     }
 
     private FacturaResponse toResponse(Factura f) {

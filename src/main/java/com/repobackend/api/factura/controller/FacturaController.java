@@ -4,17 +4,14 @@ import java.util.List;
 import java.util.Map;
 
 import com.repobackend.api.factura.dto.FacturaRequest;
+import com.repobackend.api.factura.service.FacturaServiceV2;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.repobackend.api.factura.model.Factura;
-import com.repobackend.api.factura.service.FacturaService;
+import com.repobackend.api.factura.service.FacturaPdfService;
 
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
@@ -28,32 +25,50 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 
 @RestController
 @RequestMapping("/api/facturas")
-@Tag(name = "Facturas", description = "Creación y consulta de facturas")
+@Tag(name = "Facturas", description = "Creación y consulta de facturas con IVA y descuento de stock")
 public class FacturaController {
-    private final FacturaService facturaService;
+    private final FacturaServiceV2 facturaService;
+    private final FacturaPdfService facturaPdfService;
 
-    public FacturaController(FacturaService facturaService) {
+    public FacturaController(FacturaServiceV2 facturaService, FacturaPdfService facturaPdfService) {
         this.facturaService = facturaService;
+        this.facturaPdfService = facturaPdfService;
     }
 
-    // Backwards compatible Map-based endpoint
-    @Operation(summary = "Crear factura (map)", description = "Crea una factura usando un payload genérico",
-        responses = {@ApiResponse(responseCode = "201", description = "Factura creada", content = @Content)})
+    @Operation(
+        summary = "Crear factura EMITIDA",
+        description = "Crea y emite una factura definitiva. SIEMPRE descuenta stock y calcula precios/IVA desde productos. No acepta precios del cliente."
+    )
     @PostMapping(consumes = "application/json")
-    public ResponseEntity<?> crearFactura(@RequestBody Map<String, Object> body) {
-        var r = facturaService.crearFactura(body);
-        if (r.containsKey("error")) return ResponseEntity.badRequest().body(r);
-        return ResponseEntity.status(201).body(r);
+    public ResponseEntity<?> crearFactura(
+        @Valid @RequestBody FacturaRequest facturaRequest,
+        Authentication authentication
+    ) {
+        try {
+            String userId = authentication == null ? null : authentication.getName();
+            var resp = facturaService.crearYEmitir(facturaRequest, userId);
+            return ResponseEntity.status(201).body(Map.of("factura", resp));
+        } catch (IllegalArgumentException iae) {
+            return ResponseEntity.badRequest().body(Map.of("error", iae.getMessage()));
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.status(409).body(Map.of("error", ise.getMessage()));
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
+        }
     }
 
-    // New typed endpoint accepting DTO
-    @Operation(summary = "Crear factura (DTO)", description = "Crea una factura usando DTO tipado",
-        responses = {@ApiResponse(responseCode = "201", description = "Factura creada", content = @Content(mediaType = "application/json",
-            examples = @ExampleObject(value = "{\"factura\": {\"id\": \"f1\", \"total\": 123.45}}")) )})
-    @PostMapping(path = "/dto", consumes = "application/json")
-    public ResponseEntity<?> crearFacturaDTO(@Valid @RequestBody FacturaRequest facturaRequest) {
+    @Operation(
+        summary = "Crear factura en BORRADOR",
+        description = "Crea factura sin descontar stock (para cotizaciones). Usar POST /facturas/{id}/emitir para emitirla."
+    )
+    @PostMapping(path = "/borrador", consumes = "application/json")
+    public ResponseEntity<?> crearBorrador(
+        @Valid @RequestBody FacturaRequest facturaRequest,
+        Authentication authentication
+    ) {
         try {
-            var resp = facturaService.crearFactura(facturaRequest);
+            String userId = authentication == null ? null : authentication.getName();
+            var resp = facturaService.crearBorrador(facturaRequest, userId);
             return ResponseEntity.status(201).body(Map.of("factura", resp));
         } catch (IllegalArgumentException iae) {
             return ResponseEntity.badRequest().body(Map.of("error", iae.getMessage()));
@@ -63,30 +78,49 @@ public class FacturaController {
     }
 
     @Operation(
-        summary = "Checkout carrito",
-        description = "Crea una factura a partir de un carrito del usuario autenticado. Convierte los items del carrito en una factura y actualiza el stock.",
-        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            description = "ID del carrito a facturar",
-            content = @Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    name = "Checkout",
-                    value = "{\"carritoId\":\"507f1f77bcf86cd799439999\"}"
-                )
-            )
-        ),
-        responses = {
-            @ApiResponse(responseCode = "201", description = "Factura creada exitosamente",
-                content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(
-                        value = "{\"factura\":{\"id\":\"507f1f77bcf86cd799439888\",\"numeroFactura\":\"FAC-2024-001\",\"usuarioId\":\"507f1f77bcf86cd799439011\",\"total\":127.50,\"fecha\":\"2024-10-30T10:30:00Z\",\"items\":[{\"productoId\":\"507f191e810c19729de860ea\",\"cantidad\":5,\"precioUnitario\":25.50}]}}"
-                    )
-                )
-            ),
-            @ApiResponse(responseCode = "400", description = "Carrito inválido o vacío", content = @Content),
-            @ApiResponse(responseCode = "401", description = "Usuario no autenticado", content = @Content),
-            @ApiResponse(responseCode = "409", description = "Stock insuficiente", content = @Content)
+        summary = "Emitir borrador",
+        description = "Emite un borrador (descuenta stock y cambia estado a EMITIDA)"
+    )
+    @PostMapping("/{id}/emitir")
+    public ResponseEntity<?> emitirBorrador(@PathVariable String id, Authentication authentication) {
+        try {
+            String userId = authentication == null ? null : authentication.getName();
+            var resp = facturaService.emitirBorrador(id, userId);
+            return ResponseEntity.ok(Map.of("factura", resp));
+        } catch (IllegalArgumentException iae) {
+            return ResponseEntity.status(404).body(Map.of("error", iae.getMessage()));
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.status(409).body(Map.of("error", ise.getMessage()));
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
         }
+    }
+
+    @Operation(
+        summary = "Anular factura",
+        description = "Anula una factura emitida (NO devuelve stock automáticamente)"
+    )
+    @PostMapping("/{id}/anular")
+    public ResponseEntity<?> anularFactura(
+        @PathVariable String id,
+        @RequestBody(required = false) Map<String, String> body
+    ) {
+        try {
+            String motivo = body != null ? body.get("motivo") : "Sin motivo especificado";
+            var resp = facturaService.anular(id, motivo);
+            return ResponseEntity.ok(Map.of("factura", resp));
+        } catch (IllegalArgumentException iae) {
+            return ResponseEntity.status(404).body(Map.of("error", iae.getMessage()));
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.status(409).body(Map.of("error", ise.getMessage()));
+        } catch (Exception ex) {
+            return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
+        }
+    }
+
+    @Operation(
+        summary = "Checkout carrito",
+        description = "Crea factura EMITIDA desde carrito. SIEMPRE descuenta stock y calcula precios/IVA desde productos."
     )
     @PostMapping(path = "/checkout", consumes = "application/json")
     public ResponseEntity<?> checkout(@RequestBody Map<String, Object> body, Authentication authentication) {
@@ -103,11 +137,9 @@ public class FacturaController {
         } catch (Exception ex) {
             return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
         }
-
     }
 
-    @Operation(summary = "Obtener factura por id", responses = {@ApiResponse(responseCode = "200", description = "Factura encontrada", content = @Content),
-        @ApiResponse(responseCode = "404", description = "No encontrada", content = @Content)})
+    @Operation(summary = "Obtener factura por id")
     @GetMapping("/{id}")
     public ResponseEntity<?> getFactura(@PathVariable String id) {
         var maybe = facturaService.getById(id);
@@ -115,8 +147,21 @@ public class FacturaController {
         return ResponseEntity.ok(Map.of("factura", maybe.get()));
     }
 
-    @Operation(summary = "Obtener factura por número", responses = {@ApiResponse(responseCode = "200", description = "Factura encontrada", content = @Content),
-        @ApiResponse(responseCode = "404", description = "No encontrada", content = @Content)})
+    @Operation(summary = "Descargar PDF de factura con IVA")
+    @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> descargarPdf(@PathVariable String id) {
+        var maybe = facturaService.getById(id);
+        if (maybe.isEmpty()) return ResponseEntity.status(404).build();
+        Factura f = maybe.get();
+        byte[] pdf = facturaPdfService.renderFacturaPdf(f);
+        String filename = "factura-" + (f.getNumeroFactura() == null ? f.getId() : f.getNumeroFactura()) + ".pdf";
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("inline", filename);
+        return ResponseEntity.ok().headers(headers).body(pdf);
+    }
+
+    @Operation(summary = "Obtener factura por número")
     @GetMapping("/numero/{numero}")
     public ResponseEntity<?> getPorNumero(@PathVariable String numero) {
         Factura f = facturaService.findByNumeroFactura(numero);
@@ -124,7 +169,7 @@ public class FacturaController {
         return ResponseEntity.ok(Map.of("factura", f));
     }
 
-    @Operation(summary = "Listar facturas por usuario", responses = {@ApiResponse(responseCode = "200", description = "Lista de facturas", content = @Content)})
+    @Operation(summary = "Listar facturas por usuario")
     @GetMapping
     public ResponseEntity<?> listarPorUsuario(@RequestParam(required = false) String userId) {
         if (userId == null) return ResponseEntity.ok(Map.of("facturas", List.of()));

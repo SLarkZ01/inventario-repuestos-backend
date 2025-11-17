@@ -9,7 +9,6 @@ public class CategoriaResponse {
     private String idString;
     private String nombre;
     private String descripcion;
-    private Integer iconoRecurso;
     private String tallerId;
     private String mappedGlobalCategoryId;
     private Date creadoEn;
@@ -49,13 +48,6 @@ public class CategoriaResponse {
         this.descripcion = descripcion;
     }
 
-    public Integer getIconoRecurso() {
-        return iconoRecurso;
-    }
-
-    public void setIconoRecurso(Integer iconoRecurso) {
-        this.iconoRecurso = iconoRecurso;
-    }
 
     public String getTallerId() { return tallerId; }
     public void setTallerId(String tallerId) { this.tallerId = tallerId; }

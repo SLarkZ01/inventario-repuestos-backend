@@ -9,9 +9,9 @@ public class ProductoResponse {
     private String nombre;
     private String descripcion;
     private Double precio;
+    private Double tasaIva;
     private Integer stock;
     private String categoriaId;
-    private Integer imagenRecurso;
     private List<java.util.Map<String, Object>> listaMedios;
     // Especificaciones técnicas estructuradas
     private java.util.Map<String, String> specs;
@@ -63,6 +63,14 @@ public class ProductoResponse {
         this.precio = precio;
     }
 
+    public Double getTasaIva() {
+        return tasaIva;
+    }
+
+    public void setTasaIva(Double tasaIva) {
+        this.tasaIva = tasaIva;
+    }
+
     public Integer getStock() {
         return stock;
     }
@@ -79,13 +87,6 @@ public class ProductoResponse {
         this.categoriaId = categoriaId;
     }
 
-    public Integer getImagenRecurso() {
-        return imagenRecurso;
-    }
-
-    public void setImagenRecurso(Integer imagenRecurso) {
-        this.imagenRecurso = imagenRecurso;
-    }
 
     public List<java.util.Map<String, Object>> getListaMedios() {
         return listaMedios;

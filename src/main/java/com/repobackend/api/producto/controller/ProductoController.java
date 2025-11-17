@@ -40,6 +40,11 @@ public class ProductoController {
         description = """
             Crea un nuevo producto en el inventario.
             
+            **NUEVO (v2.0): Campo tasaIva obligatorio para facturación**
+            - `tasaIva`: Tasa de IVA en porcentaje (ej: 0, 5, 19). **Default: 19%** si no se especifica
+            - Este campo es usado automáticamente al generar facturas para calcular el IVA
+            - Valores comunes en Colombia: 0% (exento), 5% (canasta básica), 19% (estándar)
+            
             **IMPORTANTE - Gestión de Imágenes:**
             - Las imágenes DEBEN subirse primero a Cloudinary usando `/api/uploads/cloudinary-sign`
             - Cada objeto en `listaMedios` DEBE incluir el campo `publicId` (CRÍTICO para eliminar imágenes al borrar el producto)
@@ -58,6 +63,7 @@ public class ProductoController {
         requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
             description = """
                 Datos del producto. 
+                **NUEVO**: Campo `tasaIva` (IVA en %) - Si no se envía, se asigna 19% por defecto.
                 **CRÍTICO**: Si incluyes `listaMedios`, cada medio DEBE tener `publicId` para poder eliminar las imágenes de Cloudinary.
                 El campo `specs` es opcional pero recomendado para especificaciones técnicas.
                 """,
@@ -65,15 +71,15 @@ public class ProductoController {
             content = @Content(
                 mediaType = "application/json",
                 examples = @ExampleObject(
-                    name = "Ejemplo de producto completo",
-                    value = "{\"nombre\":\"Filtro de Aceite Yamaha\",\"descripcion\":\"Filtro de aceite para motos Yamaha 150cc\",\"precio\":25.50,\"stock\":100,\"categoriaId\":\"507f1f77bcf86cd799439011\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image/jpeg\",\"publicId\":\"products/507f1f77/filtro-yamaha-abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg\",\"url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg\",\"format\":\"jpg\",\"width\":800,\"height\":600,\"order\":0}],\"specs\":{\"Marca\":\"Yamaha\",\"Modelo\":\"YZF-R15\",\"Compatibilidad\":\"150cc\",\"Material\":\"Papel\",\"Peso\":\"0.2kg\"}}"
+                    name = "Ejemplo de producto completo con IVA",
+                    value = "{\"nombre\":\"Filtro de Aceite Yamaha\",\"descripcion\":\"Filtro de aceite para motos Yamaha 150cc\",\"precio\":25000,\"tasaIva\":19.0,\"stock\":100,\"categoriaId\":\"507f1f77bcf86cd799439011\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image/jpeg\",\"publicId\":\"products/507f1f77/filtro-yamaha-abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg\",\"url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg\",\"format\":\"jpg\",\"width\":800,\"height\":600,\"order\":0}],\"specs\":{\"Marca\":\"Yamaha\",\"Modelo\":\"YZF-R15\",\"Compatibilidad\":\"150cc\",\"Material\":\"Papel\",\"Peso\":\"0.2kg\"}}"
                 )
             )
         ),
         responses = {
             @ApiResponse(responseCode = "201", description = "Producto creado exitosamente",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"producto\":{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro de Aceite Yamaha\",\"precio\":25.50,\"stock\":100,\"tallerId\":\"507f1f77bcf86cd799439777\"}}")
+                    examples = @ExampleObject(value = "{\"producto\":{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro de Aceite Yamaha\",\"precio\":25000,\"tasaIva\":19.0,\"stock\":100,\"tallerId\":\"507f1f77bcf86cd799439777\"}}")
                 )
             ),
             @ApiResponse(responseCode = "400", description = "Datos inválidos (ej: nombre vacío, stock negativo)", content = @Content)
@@ -131,6 +137,7 @@ public class ProductoController {
             
             **La respuesta incluye:**
             - Datos básicos (nombre, descripción, precio, stock)
+            - **tasaIva**: Tasa de IVA en porcentaje (usado para calcular IVA en facturas)
             - `listaMedios`: Array con imágenes (cada una con publicId, secure_url, etc.)
             - `specs`: Objeto con especificaciones técnicas (si existen)
             - `tallerId`: ID del taller propietario (si existe)
@@ -142,7 +149,7 @@ public class ProductoController {
         responses = {
             @ApiResponse(responseCode = "200", description = "Producto encontrado",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"producto\":{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro de Aceite Yamaha\",\"descripcion\":\"Filtro de aceite para motos Yamaha 150cc\",\"precio\":25.50,\"stock\":100,\"categoriaId\":\"507f1f77bcf86cd799439011\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image/jpeg\",\"publicId\":\"products/507f1f77/filtro-yamaha-abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg\",\"format\":\"jpg\",\"width\":800,\"height\":600,\"order\":0}],\"specs\":{\"Marca\":\"Yamaha\",\"Modelo\":\"YZF-R15\",\"Compatibilidad\":\"150cc\",\"Material\":\"Papel\",\"Peso\":\"0.2kg\"}}}")
+                    examples = @ExampleObject(value = "{\"producto\":{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro de Aceite Yamaha\",\"descripcion\":\"Filtro de aceite para motos Yamaha 150cc\",\"precio\":25000,\"tasaIva\":19.0,\"stock\":100,\"categoriaId\":\"507f1f77bcf86cd799439011\",\"tallerId\":\"507f1f77bcf86cd799439777\",\"listaMedios\":[{\"type\":\"image/jpeg\",\"publicId\":\"products/507f1f77/filtro-yamaha-abc123\",\"secure_url\":\"https://res.cloudinary.com/df7ggzasi/image/upload/v1763285023/products/507f1f77/filtro-yamaha-abc123.jpg\",\"format\":\"jpg\",\"width\":800,\"height\":600,\"order\":0}],\"specs\":{\"Marca\":\"Yamaha\",\"Modelo\":\"YZF-R15\",\"Compatibilidad\":\"150cc\",\"Material\":\"Papel\",\"Peso\":\"0.2kg\"}}}")
                 )
             ),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado", content = @Content)

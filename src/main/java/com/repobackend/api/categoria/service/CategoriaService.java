@@ -46,8 +46,6 @@ public class CategoriaService {
         c.setIdString(idString);
         c.setNombre((String) body.get("nombre"));
         c.setDescripcion((String) body.getOrDefault("descripcion", null));
-        Number icono = (Number) body.getOrDefault("iconoRecurso", null);
-        if (icono != null) c.setIconoRecurso(icono.intValue());
         // tallerId ahora obligatorio
         if (body.containsKey("tallerId")) c.setTallerId((String) body.get("tallerId"));
         else return Map.of("error", "tallerId es obligatorio para crear categoría");
@@ -99,7 +97,6 @@ public class CategoriaService {
         c.setIdString(req.getIdString());
         c.setNombre(req.getNombre());
         c.setDescripcion(req.getDescripcion());
-        c.setIconoRecurso(req.getIconoRecurso());
         c.setTallerId(req.getTallerId());
         c.setMappedGlobalCategoryId(req.getMappedGlobalCategoryId());
         // copiar y sanitizar lista de medios si se provee
@@ -113,7 +110,6 @@ public class CategoriaService {
         r.setIdString(c.getIdString());
         r.setNombre(c.getNombre());
         r.setDescripcion(c.getDescripcion());
-        r.setIconoRecurso(c.getIconoRecurso());
         r.setTallerId(c.getTallerId());
         r.setMappedGlobalCategoryId(c.getMappedGlobalCategoryId());
         r.setCreadoEn(c.getCreadoEn());
@@ -188,10 +184,6 @@ public class CategoriaService {
         }
         if (body.containsKey("nombre")) c.setNombre((String) body.get("nombre"));
         if (body.containsKey("descripcion")) c.setDescripcion((String) body.get("descripcion"));
-        if (body.containsKey("iconoRecurso")) {
-            Number n = (Number) body.get("iconoRecurso");
-            c.setIconoRecurso(n == null ? null : n.intValue());
-        }
         if (body.containsKey("listaMedios")) {
             Object lm = body.get("listaMedios");
             if (lm instanceof List) c.setListaMedios(MediaSanitizer.sanitize((List<java.util.Map<String, Object>>) lm));
@@ -215,7 +207,6 @@ public class CategoriaService {
         }
         if (req.getNombre() != null) c.setNombre(req.getNombre());
         if (req.getDescripcion() != null) c.setDescripcion(req.getDescripcion());
-        if (req.getIconoRecurso() != null) c.setIconoRecurso(req.getIconoRecurso());
         if (req.getListaMedios() != null) c.setListaMedios(MediaSanitizer.sanitize(req.getListaMedios()));
         Categoria saved = categoriaRepository.save(c);
         // invalidar cache de categoriasGlobales por si acaso

@@ -13,7 +13,6 @@ public class CategoriaRequest {
 
     private String descripcion;
 
-    private Integer iconoRecurso;
     // tallerId ahora es obligatorio para nuevas categorías (pero nullable para migración de categorías globales legacy)
     private String tallerId;
     private String mappedGlobalCategoryId;
@@ -45,13 +44,6 @@ public class CategoriaRequest {
         this.descripcion = descripcion;
     }
 
-    public Integer getIconoRecurso() {
-        return iconoRecurso;
-    }
-
-    public void setIconoRecurso(Integer iconoRecurso) {
-        this.iconoRecurso = iconoRecurso;
-    }
 
     public String getTallerId() {
         return tallerId;

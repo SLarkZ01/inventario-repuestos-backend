@@ -61,8 +61,6 @@ public class ProductoService {
         p.setStock(stockN == null ? 0 : stockN.intValue());
         p.setCategoriaId((String) body.get("categoriaId"));
         p.setTallerId((String) body.get("tallerId"));
-        Number imagen = (Number) body.getOrDefault("imagenRecurso", null);
-        if (imagen != null) p.setImagenRecurso(imagen.intValue());
         Object lm = body.get("listaMedios");
         if (lm instanceof List) {
             p.setListaMedios(MediaSanitizer.sanitize((List<java.util.Map<String, Object>>) lm));
@@ -115,10 +113,10 @@ public class ProductoService {
         p.setNombre(req.getNombre());
         p.setDescripcion(req.getDescripcion());
         p.setPrecio(req.getPrecio());
+        p.setTasaIva(req.getTasaIva() != null ? req.getTasaIva() : 19.0); // Default 19% IVA Colombia
         Integer s = req.getStock();
         p.setStock(s == null ? 0 : s);
         p.setCategoriaId(req.getCategoriaId());
-        p.setImagenRecurso(req.getImagenRecurso());
         p.setListaMedios(req.getListaMedios() == null ? null : MediaSanitizer.sanitize(req.getListaMedios()));
         p.setSpecs(req.getSpecs());
         return p;
@@ -131,9 +129,9 @@ public class ProductoService {
         r.setNombre(p.getNombre());
         r.setDescripcion(p.getDescripcion());
         r.setPrecio(p.getPrecio());
+        r.setTasaIva(p.getTasaIva());
         r.setStock(p.getStock());
         r.setCategoriaId(p.getCategoriaId());
-        r.setImagenRecurso(p.getImagenRecurso());
         r.setListaMedios(p.getListaMedios());
         // copiar specs estructuradas
         r.setSpecs(p.getSpecs());
@@ -221,15 +219,15 @@ public class ProductoService {
             Number n = (Number) body.get("precio");
             p.setPrecio(n == null ? null : n.doubleValue());
         }
+        if (body.containsKey("tasaIva")) {
+            Number n = (Number) body.get("tasaIva");
+            p.setTasaIva(n == null ? null : n.doubleValue());
+        }
         if (body.containsKey("stock")) {
             Number n = (Number) body.get("stock");
             p.setStock(n == null ? 0 : n.intValue());
         }
         if (body.containsKey("categoriaId")) p.setCategoriaId((String) body.get("categoriaId"));
-        if (body.containsKey("imagenRecurso")) {
-            Number n = (Number) body.get("imagenRecurso");
-            p.setImagenRecurso(n == null ? null : n.intValue());
-        }
         if (body.containsKey("listaMedios")) {
             Object lm = body.get("listaMedios");
             if (lm instanceof List) p.setListaMedios(MediaSanitizer.sanitize((List<java.util.Map<String, Object>>) lm));
@@ -247,9 +245,9 @@ public class ProductoService {
         if (req.getNombre() != null) p.setNombre(req.getNombre());
         if (req.getDescripcion() != null) p.setDescripcion(req.getDescripcion());
         if (req.getPrecio() != null) p.setPrecio(req.getPrecio());
+        if (req.getTasaIva() != null) p.setTasaIva(req.getTasaIva());
         if (req.getStock() != null) p.setStock(req.getStock());
         if (req.getCategoriaId() != null) p.setCategoriaId(req.getCategoriaId());
-        if (req.getImagenRecurso() != null) p.setImagenRecurso(req.getImagenRecurso());
         if (req.getListaMedios() != null) p.setListaMedios(MediaSanitizer.sanitize(req.getListaMedios()));
         if (req.getSpecs() != null) p.setSpecs(req.getSpecs());
         Producto saved = productoRepository.save(p);

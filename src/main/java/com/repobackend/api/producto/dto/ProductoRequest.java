@@ -21,6 +21,9 @@ public class ProductoRequest {
     @JsonAlias({"precio", " precio "})
     private Double precio;
 
+    @JsonAlias({"tasaIva", " tasaIva ", "iva"})
+    private Double tasaIva; // Tasa de IVA en porcentaje (0, 5, 19, etc.)
+
     @Min(0)
     @JsonAlias({"stock", " stock "})
     private Integer stock;
@@ -28,8 +31,6 @@ public class ProductoRequest {
     @JsonAlias({"categoriaId", " categoriaId "})
     private String categoriaId;
 
-    @JsonAlias({"imagenRecurso", " imagenRecurso "})
-    private Integer imagenRecurso;
 
     @JsonAlias({"listaMedios", " listaMedios "})
     private List<java.util.Map<String, Object>> listaMedios;
@@ -71,6 +72,14 @@ public class ProductoRequest {
         this.precio = precio;
     }
 
+    public Double getTasaIva() {
+        return tasaIva;
+    }
+
+    public void setTasaIva(Double tasaIva) {
+        this.tasaIva = tasaIva;
+    }
+
     public Integer getStock() {
         return stock;
     }
@@ -87,13 +96,6 @@ public class ProductoRequest {
         this.categoriaId = categoriaId == null ? null : categoriaId.trim();
     }
 
-    public Integer getImagenRecurso() {
-        return imagenRecurso;
-    }
-
-    public void setImagenRecurso(Integer imagenRecurso) {
-        this.imagenRecurso = imagenRecurso;
-    }
 
     public List<java.util.Map<String, Object>> getListaMedios() {
         return listaMedios;

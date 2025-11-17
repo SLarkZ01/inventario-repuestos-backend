@@ -35,18 +35,21 @@ public class PublicProductosController {
         description = """
             Devuelve productos paginados para clientes públicos (sin autenticación).
             
+            **NUEVO (v2.0)**: La respuesta ahora incluye `tasaIva` (tasa de IVA en %) para cada producto.
+            Este campo se usa para calcular el IVA al momento de comprar (checkout).
+            
             Soporta:
             - Búsqueda por nombre con `q`
             - Filtrado por `categoriaId`
             - Paginación con `page` y `size`
             
-            La respuesta expone `totalStock` agregado y `stockByAlmacen` cuando está disponible.
+            La respuesta expone `totalStock` agregado, `stockByAlmacen` y `tasaIva` cuando está disponible.
             """,
         security = {},
         responses = {
             @ApiResponse(responseCode = "200", description = "Lista de productos",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"productos\":[{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro\",\"precio\":25.5,\"totalStock\":50}],\"total\":1,\"page\":0,\"size\":20}")
+                    examples = @ExampleObject(value = "{\"productos\":[{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro\",\"precio\":25000,\"tasaIva\":19.0,\"totalStock\":50}],\"total\":1,\"page\":0,\"size\":20}")
                 )
             )
         }
@@ -70,7 +73,10 @@ public class PublicProductosController {
     @Operation(
         summary = "Obtener producto por ID (público)",
         description = """
-            Devuelve los detalles completos de un producto con `totalStock` agregado y `stockByAlmacen`.
+            Devuelve los detalles completos de un producto con `totalStock` agregado, `stockByAlmacen` y `tasaIva`.
+            
+            **IMPORTANTE para App Android**: El campo `tasaIva` se usa para mostrar el precio con IVA incluido
+            y calcular el total al agregar al carrito. Ejemplo: precio=$25.000, tasaIva=19% → Precio final=$29.750
             
             Este endpoint no requiere autenticación.
             """,
@@ -78,7 +84,7 @@ public class PublicProductosController {
         responses = {
             @ApiResponse(responseCode = "200", description = "Producto encontrado",
                 content = @Content(mediaType = "application/json",
-                    examples = @ExampleObject(value = "{\"producto\":{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro de Aceite\",\"precio\":25.5,\"totalStock\":50,\"stockByAlmacen\":[{\"almacenId\":\"abc\",\"cantidad\":20}]}}")
+                    examples = @ExampleObject(value = "{\"producto\":{\"id\":\"507f191e810c19729de860ea\",\"nombre\":\"Filtro de Aceite\",\"precio\":25000,\"tasaIva\":19.0,\"totalStock\":50,\"stockByAlmacen\":[{\"almacenId\":\"abc\",\"cantidad\":20}]}}")
                 )
             ),
             @ApiResponse(responseCode = "404", description = "Producto no encontrado", content = @Content)

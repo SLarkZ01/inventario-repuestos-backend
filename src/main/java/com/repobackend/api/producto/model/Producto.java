@@ -20,9 +20,9 @@ public class Producto {
     private String nombre;
     private String descripcion;
     private Double precio;
+    private Double tasaIva; // Tasa de IVA aplicable (0, 5, 19, etc.) en porcentaje
     private Integer stock;
     private String categoriaId;
-    private Integer imagenRecurso;
     private String ownerId; // userId del creador / propietario del producto
     @Indexed
     private String tallerId; // id del taller al que pertenece el producto
@@ -51,14 +51,15 @@ public class Producto {
     public Double getPrecio() { return precio; }
     public void setPrecio(Double precio) { this.precio = precio; }
 
+    public Double getTasaIva() { return tasaIva; }
+    public void setTasaIva(Double tasaIva) { this.tasaIva = tasaIva; }
+
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
 
     public String getCategoriaId() { return categoriaId; }
     public void setCategoriaId(String categoriaId) { this.categoriaId = categoriaId; }
 
-    public Integer getImagenRecurso() { return imagenRecurso; }
-    public void setImagenRecurso(Integer imagenRecurso) { this.imagenRecurso = imagenRecurso; }
 
     public String getOwnerId() { return ownerId; }
     public void setOwnerId(String ownerId) { this.ownerId = ownerId; }
