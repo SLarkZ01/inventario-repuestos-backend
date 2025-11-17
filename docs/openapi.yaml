@@ -28,8 +28,6 @@ tags:
 - name: Configuración Global
   description: Endpoints para gestionar la configuración del sistema (IVA, datos de
     empresa, resolución DIAN, etc.)
-- name: Configuración por Taller
-  description: Override de configuración para cada taller (IVA, etc.)
 - name: TallerMiembros
   description: Operaciones sobre miembros de taller (promover, demover, remover)
 - name: Categorias
@@ -115,76 +113,6 @@ paths:
           description: Permisos insuficientes
         '404':
           description: No encontrado
-  /api/talleres/{tallerId}/configuracion:
-    get:
-      tags:
-      - Configuración por Taller
-      summary: Obtener configuración del taller
-      description: Devuelve la configuración del taller y el valor de IVA efectivo
-        (override o global). Requiere ser miembro del taller.
-      operationId: obtener
-      parameters:
-      - name: tallerId
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: Configuración del taller
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TallerConfiguracionResponse'
-              example:
-                tallerId: 507f1..
-                tasaIvaPorDefecto: 5.0
-                ivaEfectivo: 5.0
-        '403':
-          description: No autorizado
-          content:
-            '*/*':
-              schema:
-                type: object
-      security:
-      - bearerAuth: []
-    put:
-      tags:
-      - Configuración por Taller
-      summary: Actualizar configuración del taller
-      description: Permite establecer o limpiar el override de IVA por defecto para
-        este taller. Requiere rol ADMIN del taller o admin de plataforma.
-      operationId: actualizar
-      parameters:
-      - name: tallerId
-        in: path
-        required: true
-        schema:
-          type: string
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TallerConfiguracionRequest'
-            examples:
-              Establecer IVA 5%:
-                description: Establecer IVA 5%
-                value:
-                  tasaIvaPorDefecto: 5.0
-              Eliminar override (volver a global):
-                description: Eliminar override (volver a global)
-                value:
-                  eliminarOverride: true
-        required: true
-      responses:
-        '200':
-          description: Configuración actualizada
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TallerConfiguracionResponse'
-      security:
-      - bearerAuth: []
   /api/talleres/{tallerId}/almacenes/{almacenId}:
     get:
       tags:
@@ -2131,29 +2059,6 @@ paths:
           description: No eres miembro del taller
         '404':
           description: Taller no encontrado
-  /api/talleres/{tallerId}/configuracion/iva-defecto:
-    get:
-      tags:
-      - Configuración por Taller
-      summary: Obtener IVA por defecto del taller
-      description: Devuelve solo el valor de IVA efectivo para el taller (override
-        si existe; si no, global).
-      operationId: obtenerIva
-      parameters:
-      - name: tallerId
-        in: path
-        required: true
-        schema:
-          type: string
-      responses:
-        '200':
-          description: IVA
-          content:
-            application/json:
-              example:
-                tasaIvaPorDefecto: 19.0
-      security:
-      - bearerAuth: []
   /api/talleres/_debug:
     get:
       tags:
@@ -2712,28 +2617,6 @@ components:
       properties:
         nombre:
           type: string
-    TallerConfiguracionRequest:
-      type: object
-      properties:
-        tasaIvaPorDefecto:
-          type: number
-          format: double
-        eliminarOverride:
-          type: boolean
-    TallerConfiguracionResponse:
-      type: object
-      properties:
-        tallerId:
-          type: string
-        tasaIvaPorDefecto:
-          type: number
-          format: double
-        ivaEfectivo:
-          type: number
-          format: double
-        actualizadoEn:
-          type: string
-          format: date-time
     AlmacenRequest:
       required:
       - nombre
