@@ -24,6 +24,7 @@ import com.repobackend.api.stock.service.StockService;
 import com.repobackend.api.auth.service.AuthorizationService;
 import com.repobackend.api.cloud.service.CloudinaryService;
 import com.repobackend.api.media.MediaSanitizer;
+import com.repobackend.api.configuracion.service.ConfiguracionGlobalService;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,13 +37,15 @@ public class ProductoService {
     private final StockService stockService;
     private final AuthorizationService authorizationService;
     private final CloudinaryService cloudinaryService;
+    private final ConfiguracionGlobalService configuracionGlobalService;
 
-    public ProductoService(ProductoRepository productoRepository, MongoTemplate mongoTemplate, StockService stockService, AuthorizationService authorizationService, CloudinaryService cloudinaryService) {
+    public ProductoService(ProductoRepository productoRepository, MongoTemplate mongoTemplate, StockService stockService, AuthorizationService authorizationService, CloudinaryService cloudinaryService, ConfiguracionGlobalService configuracionGlobalService) {
         this.productoRepository = productoRepository;
         this.mongoTemplate = mongoTemplate;
         this.stockService = stockService;
         this.authorizationService = authorizationService;
         this.cloudinaryService = cloudinaryService;
+        this.configuracionGlobalService = configuracionGlobalService;
     }
 
     @PreAuthorize("hasRole('ADMIN') or hasRole('VENDEDOR')")
@@ -113,7 +116,8 @@ public class ProductoService {
         p.setNombre(req.getNombre());
         p.setDescripcion(req.getDescripcion());
         p.setPrecio(req.getPrecio());
-        p.setTasaIva(req.getTasaIva() != null ? req.getTasaIva() : 19.0); // Default 19% IVA Colombia
+        // Usar IVA del request o el configurado globalmente como defecto
+        p.setTasaIva(req.getTasaIva() != null ? req.getTasaIva() : configuracionGlobalService.obtenerTasaIvaPorDefecto());
         Integer s = req.getStock();
         p.setStock(s == null ? 0 : s);
         p.setCategoriaId(req.getCategoriaId());
