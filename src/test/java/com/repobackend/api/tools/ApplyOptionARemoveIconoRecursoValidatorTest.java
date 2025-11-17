@@ -24,7 +24,7 @@ public class ApplyOptionARemoveIconoRecursoValidatorTest {
     public void applyCollMod_RemoveIconoRecursoFromRequired() {
         var db = mongoTemplate.getDb();
 
-        // listCollections to fetch current validator for 'categorias'
+        //listCollections to fetch current validator for 'categorias'
         Document listCmd = new Document("listCollections", 1).append("filter", new Document("name", "categorias"));
         Document listRes = db.runCommand(listCmd);
         Document cursor = (Document) listRes.get("cursor");
