@@ -19,6 +19,8 @@ public class Categoria {
     private String idString;
     private String nombre;
     private String descripcion;
+    //Asegurar valor por defecto para cumplir validación del schema en Mongo
+    private Integer iconoRecurso = 0;
 
     @Indexed
     private String tallerId; // null => global category; otherwise local to taller
@@ -42,6 +44,8 @@ public class Categoria {
     public String getDescripcion() { return descripcion; }
     public void setDescripcion(String descripcion) { this.descripcion = descripcion; }
 
+    public Integer getIconoRecurso() { return iconoRecurso; }
+    public void setIconoRecurso(Integer iconoRecurso) { this.iconoRecurso = iconoRecurso; }
 
     public String getTallerId() { return tallerId; }
     public void setTallerId(String tallerId) { this.tallerId = tallerId; }
