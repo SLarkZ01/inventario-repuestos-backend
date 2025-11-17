@@ -4,6 +4,7 @@ export * from './AdminUsersApi';
 export * from './AuthApi';
 export * from './CarritosApi';
 export * from './CategoriasApi';
+export * from './ConfiguracinGlobalApi';
 export * from './FacturasApi';
 export * from './FavoritosApi';
 export * from './MovimientosApi';

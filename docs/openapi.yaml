@@ -25,6 +25,9 @@ tags:
   description: Creación de administradores
 - name: Talleres
   description: Administración de talleres, almacenes e invitaciones
+- name: Configuración Global
+  description: Endpoints para gestionar la configuración del sistema (IVA, datos de
+    empresa, resolución DIAN, etc.)
 - name: TallerMiembros
   description: Operaciones sobre miembros de taller (promover, demover, remover)
 - name: Categorias
@@ -393,6 +396,142 @@ paths:
           description: Producto no encontrado
         '403':
           description: Sin permisos para eliminar este producto
+  /api/configuracion:
+    get:
+      tags:
+      - Configuración Global
+      summary: Obtener configuración global
+      description: 'Obtiene la configuración global del sistema, incluyendo:
+
+        - **tasaIvaPorDefecto**: Tasa de IVA por defecto para productos nuevos (%)
+
+        - **Datos de empresa**: nombre, NIT, dirección, teléfono, etc.
+
+        - **Resolución DIAN**: prefijo, número de resolución, rango autorizado
+
+
+        Si no existe configuración, se crea automáticamente con valores por defecto
+        (IVA 19%).
+
+
+        **Uso en Frontend**: El valor de `tasaIvaPorDefecto` se debe usar al crear
+        nuevos productos
+
+        y puede ser modificado desde el panel de configuración por un ADMIN.
+
+        '
+      operationId: obtenerConfiguracion
+      responses:
+        '200':
+          description: Configuración obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+              example:
+                id: 507f191e810c19729de860ea
+                tasaIvaPorDefecto: 19.0
+                nombreEmpresa: Repuestos ABC S.A.S
+                nit: '900123456'
+                digitoVerificacion: '7'
+                direccion: 'Calle 123 #45-67'
+                telefono: '3001234567'
+                email: contacto@repuestos.com
+                ciudad: Bogotá
+                departamento: Cundinamarca
+                prefijoFactura: FV
+                resolucionDian: '18764123456789'
+                rangoFacturaInicio: 1
+                rangoFacturaFin: 5000
+                proximoNumeroFactura: 1
+                actualizadoEn: '2025-01-17T10:30:00'
+        '401':
+          description: No autenticado
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+        '403':
+          description: No autorizado (requiere rol ADMIN)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+      security:
+      - bearerAuth: []
+    put:
+      tags:
+      - Configuración Global
+      summary: Actualizar configuración global
+      description: 'Actualiza la configuración global del sistema.
+
+        Solo se actualizan los campos enviados (permite actualización parcial).
+
+
+        **Casos de uso principales**:
+
+        - Cambiar tasa de IVA por defecto cuando cambie la legislación colombiana
+
+        - Configurar datos de la empresa para facturas
+
+        - Configurar resolución DIAN para facturación electrónica
+
+
+        **IMPORTANTE**: El cambio de `tasaIvaPorDefecto` NO afecta productos existentes,
+
+        solo se aplica a productos creados después del cambio.
+
+        '
+      operationId: actualizarConfiguracion
+      requestBody:
+        description: Campos a actualizar (todos opcionales)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfiguracionGlobalRequest'
+            examples:
+              Cambiar IVA:
+                description: 'Ejemplo: Cambiar IVA de 19% a 21%'
+                value:
+                  tasaIvaPorDefecto: 21.0
+              Configuración completa:
+                description: Configuración completa
+                value:
+                  tasaIvaPorDefecto: 19.0
+                  nombreEmpresa: Repuestos ABC S.A.S
+                  nit: '900123456'
+                  digitoVerificacion: '7'
+                  direccion: 'Calle 123 #45-67'
+                  telefono: '3001234567'
+                  email: contacto@repuestos.com
+                  ciudad: Bogotá
+                  departamento: Cundinamarca
+                  prefijoFactura: FV
+                  resolucionDian: '18764123456789'
+                  rangoFacturaInicio: 1
+                  rangoFacturaFin: 5000
+        required: true
+      responses:
+        '200':
+          description: Configuración actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+        '401':
+          description: No autenticado
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+        '403':
+          description: No autorizado (requiere rol ADMIN)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+      security:
+      - bearerAuth: []
   /api/categorias/{id}:
     get:
       tags:
@@ -2340,6 +2479,33 @@ paths:
             '*/*':
               schema:
                 type: object
+  /api/configuracion/iva-defecto:
+    get:
+      tags:
+      - Configuración Global
+      summary: Obtener tasa de IVA por defecto
+      description: 'Obtiene únicamente la tasa de IVA por defecto configurada en el
+        sistema.
+
+
+        **Uso**: Útil para formularios de creación de productos donde se necesita
+
+        pre-cargar el campo de IVA con el valor por defecto.
+
+
+        Retorna 19.0% si no hay configuración.
+
+        '
+      operationId: obtenerIvaDefecto
+      responses:
+        '200':
+          description: Tasa de IVA obtenida
+          content:
+            application/json:
+              example:
+                tasaIvaPorDefecto: 19.0
+      security:
+      - bearerAuth: []
   /api/carritos/{id}:
     get:
       tags:
@@ -2495,6 +2661,84 @@ components:
             type: string
         tallerId:
           type: string
+    ConfiguracionGlobalRequest:
+      type: object
+      properties:
+        tasaIvaPorDefecto:
+          type: number
+          format: double
+        nombreEmpresa:
+          type: string
+        nit:
+          type: string
+        digitoVerificacion:
+          type: string
+        direccion:
+          type: string
+        telefono:
+          type: string
+        email:
+          type: string
+        ciudad:
+          type: string
+        departamento:
+          type: string
+        prefijoFactura:
+          type: string
+        resolucionDian:
+          type: string
+        fechaResolucionDian:
+          type: string
+          format: date-time
+        rangoFacturaInicio:
+          type: integer
+          format: int64
+        rangoFacturaFin:
+          type: integer
+          format: int64
+    ConfiguracionGlobalResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tasaIvaPorDefecto:
+          type: number
+          format: double
+        nombreEmpresa:
+          type: string
+        nit:
+          type: string
+        digitoVerificacion:
+          type: string
+        direccion:
+          type: string
+        telefono:
+          type: string
+        email:
+          type: string
+        ciudad:
+          type: string
+        departamento:
+          type: string
+        prefijoFactura:
+          type: string
+        resolucionDian:
+          type: string
+        fechaResolucionDian:
+          type: string
+          format: date-time
+        rangoFacturaInicio:
+          type: integer
+          format: int64
+        rangoFacturaFin:
+          type: integer
+          format: int64
+        proximoNumeroFactura:
+          type: integer
+          format: int64
+        actualizadoEn:
+          type: string
+          format: date-time
     CategoriaRequest:
       required:
       - nombre

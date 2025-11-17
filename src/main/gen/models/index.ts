@@ -5,6 +5,8 @@ export * from './CarritoItemRequest';
 export * from './CarritoRequest';
 export * from './CategoriaRequest';
 export * from './ClienteRequest';
+export * from './ConfiguracionGlobalRequest';
+export * from './ConfiguracionGlobalResponse';
 export * from './CreateAdminRequest';
 export * from './FacturaItemRequest';
 export * from './FacturaRequest';
