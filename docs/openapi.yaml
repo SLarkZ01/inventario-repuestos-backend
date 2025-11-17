@@ -1374,6 +1374,17 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/FacturaRequest'
+            examples:
+              Factura directa:
+                description: Factura directa
+                value:
+                  items:
+                  - productoId: 507f1f77bcf86cd799439011
+                    cantidad: 2
+                  cliente:
+                    nombre: Juan Pérez
+                    documento: '123456789'
+                    direccion: Calle 123
         required: true
       responses:
         '200':
@@ -1458,6 +1469,15 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/FacturaRequest'
+            examples:
+              Borrador:
+                description: Borrador
+                value:
+                  items:
+                  - productoId: 507f1f77bcf86cd799439011
+                    cantidad: 1
+                  cliente:
+                    nombre: Empresa XYZ
         required: true
       responses:
         '200':
@@ -2798,19 +2818,21 @@ components:
     FacturaItemRequest:
       required:
       - cantidad
-      - precioUnitario
       - productoId
       type: object
       properties:
         productoId:
           type: string
+          description: ID del producto a facturar
+          example: 507f1f77bcf86cd799439011
         cantidad:
           minimum: 1
           type: integer
+          description: Cantidad a facturar
           format: int32
-        precioUnitario:
-          type: number
-          format: double
+          example: 2
+      description: Item de la factura. Solo se envían productoId y cantidad; el precio
+        e IVA se toman del producto en el servidor.
     FacturaRequest:
       required:
       - items
@@ -2833,6 +2855,16 @@ components:
           type: string
         estado:
           type: string
+      description: Solicitud para crear o emitir una factura. Los precios e IVA se
+        calculan en el servidor a partir de los productos.
+      example:
+        items:
+        - productoId: 507f1f77bcf86cd799439011
+          cantidad: 2
+        cliente:
+          nombre: Juan Pérez
+          documento: '123456789'
+          direccion: Calle 123
     CarritoItemRequest:
       required:
       - cantidad
