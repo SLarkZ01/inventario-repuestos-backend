@@ -247,8 +247,10 @@ public class FacturaService {
                 fi.setProductoId((String) it.get("productoId"));
                 Number q = (Number) it.getOrDefault("cantidad", 0);
                 fi.setCantidad(q == null ? 0 : q.intValue());
-                Number p = (Number) it.getOrDefault("precioUnitario", 0);
-                fi.setPrecioUnitario(p == null ? 0.0 : p.doubleValue());
+                // Tomar precio del producto desde BD (ignorar cualquier precio del cliente)
+                Producto p = productoService.getById((String) it.get("productoId"))
+                    .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado: " + it.get("productoId")));
+                fi.setPrecioUnitario(p.getPrecio() == null ? 0.0 : p.getPrecio());
                 items.add(fi);
                 totalCalc += fi.getCantidad() * fi.getPrecioUnitario();
             }
@@ -333,9 +335,13 @@ public class FacturaService {
         if (req.getItems() != null) {
             for (var it : req.getItems()) {
                 FacturaItem fi = new FacturaItem();
-                fi.setProductoId(it.getProductoId());
+                String productoId = it.getProductoId();
+                fi.setProductoId(productoId);
                 fi.setCantidad(it.getCantidad() == null ? 0 : it.getCantidad());
-                fi.setPrecioUnitario(it.getPrecioUnitario() == null ? 0.0 : it.getPrecioUnitario());
+                // Tomar SIEMPRE el precio desde el producto en BD (ignorar request)
+                Producto p = productoService.getById(productoId)
+                    .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado: " + productoId));
+                fi.setPrecioUnitario(p.getPrecio() == null ? 0.0 : p.getPrecio());
                 items.add(fi);
                 totalCalc += fi.getCantidad() * fi.getPrecioUnitario();
             }

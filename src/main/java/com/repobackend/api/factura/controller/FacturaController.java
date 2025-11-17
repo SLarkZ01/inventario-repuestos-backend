@@ -37,7 +37,17 @@ public class FacturaController {
 
     @Operation(
         summary = "Crear factura EMITIDA",
-        description = "Crea y emite una factura definitiva. SIEMPRE descuenta stock y calcula precios/IVA desde productos. No acepta precios del cliente."
+        description = "Crea y emite una factura definitiva. SIEMPRE descuenta stock y calcula precios/IVA desde productos. No acepta precios del cliente.",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @io.swagger.v3.oas.annotations.media.Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    name = "Factura directa",
+                    value = "{\n  \"items\": [ { \"productoId\": \"507f1f77bcf86cd799439011\", \"cantidad\": 2 } ],\n  \"cliente\": { \"nombre\": \"Juan Pérez\", \"documento\": \"123456789\", \"direccion\": \"Calle 123\" }\n}"
+                )
+            )
+        )
     )
     @PostMapping(consumes = "application/json")
     public ResponseEntity<?> crearFactura(
@@ -59,7 +69,17 @@ public class FacturaController {
 
     @Operation(
         summary = "Crear factura en BORRADOR",
-        description = "Crea factura sin descontar stock (para cotizaciones). Usar POST /facturas/{id}/emitir para emitirla."
+        description = "Crea factura sin descontar stock (para cotizaciones). Usar POST /facturas/{id}/emitir para emitirla.",
+        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            required = true,
+            content = @io.swagger.v3.oas.annotations.media.Content(
+                mediaType = "application/json",
+                examples = @ExampleObject(
+                    name = "Borrador",
+                    value = "{\n  \"items\": [ { \"productoId\": \"507f1f77bcf86cd799439011\", \"cantidad\": 1 } ],\n  \"cliente\": { \"nombre\": \"Empresa XYZ\" }\n}"
+                )
+            )
+        )
     )
     @PostMapping(path = "/borrador", consumes = "application/json")
     public ResponseEntity<?> crearBorrador(
