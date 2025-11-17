@@ -14,7 +14,7 @@ public class Categoria {
     @Id
     private String id; // Mongo ObjectId as hex string
 
-    // additional string id separate from _id (matches schema 'id' as string)
+    //additional string id separate from _id (matches schema 'id' as string)
     @Field("id")
     private String idString;
     private String nombre;
