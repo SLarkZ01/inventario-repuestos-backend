@@ -3,6 +3,7 @@ package com.repobackend.api.producto.dto;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -24,6 +25,11 @@ public class ProductoRequest {
     @JsonAlias({"tasaIva", " tasaIva ", "iva"})
     private Double tasaIva; // Tasa de IVA en porcentaje (0, 5, 19, etc.)
 
+    @Schema(
+        description = "Stock inicial del producto (opcional). MODO SIMPLE: Si se especifica, el stock se almacena directamente en el producto y las facturas descuentan de aquí. MODO AVANZADO: Para gestión multi-almacén, crear el producto con stock=0 y luego usar POST /api/stock/set para asignar a almacenes específicos. El sistema detecta automáticamente qué modo usar al facturar.",
+        example = "100",
+        minimum = "0"
+    )
     @Min(0)
     @JsonAlias({"stock", " stock "})
     private Integer stock;

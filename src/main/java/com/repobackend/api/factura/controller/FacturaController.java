@@ -15,18 +15,23 @@ import com.repobackend.api.factura.service.FacturaPdfService;
 
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 // OpenAPI
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 
 @RestController
 @RequestMapping("/api/facturas")
 @Tag(name = "Facturas", description = "Creación y consulta de facturas con IVA y descuento de stock")
 public class FacturaController {
+    private static final Logger logger = LoggerFactory.getLogger(FacturaController.class);
     private final FacturaServiceV2 facturaService;
     private final FacturaPdfService facturaPdfService;
 
@@ -37,18 +42,15 @@ public class FacturaController {
 
     @Operation(
         summary = "Crear factura EMITIDA",
-        description = "Crea y emite una factura definitiva. SIEMPRE descuenta stock y calcula precios/IVA desde productos. No acepta precios del cliente.",
-        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            required = true,
-            content = @io.swagger.v3.oas.annotations.media.Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    name = "Factura directa",
-                    value = "{\n  \"items\": [ { \"productoId\": \"507f1f77bcf86cd799439011\", \"cantidad\": 2 } ],\n  \"cliente\": { \"nombre\": \"Juan Pérez\", \"documento\": \"123456789\", \"direccion\": \"Calle 123\" }\n}"
-                )
-            )
-        )
+        description = "Crea y emite una factura definitiva. SIEMPRE descuenta stock y calcula precios/IVA desde productos. No acepta precios del cliente."
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Factura creada y emitida",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Factura.class)) ),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
+        @ApiResponse(responseCode = "409", description = "Conflicto (p.ej. stock insuficiente)", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Error interno", content = @Content)
+    })
     @PostMapping(consumes = "application/json")
     public ResponseEntity<?> crearFactura(
         @Valid @RequestBody FacturaRequest facturaRequest,
@@ -69,18 +71,14 @@ public class FacturaController {
 
     @Operation(
         summary = "Crear factura en BORRADOR",
-        description = "Crea factura sin descontar stock (para cotizaciones). Usar POST /facturas/{id}/emitir para emitirla.",
-        requestBody = @io.swagger.v3.oas.annotations.parameters.RequestBody(
-            required = true,
-            content = @io.swagger.v3.oas.annotations.media.Content(
-                mediaType = "application/json",
-                examples = @ExampleObject(
-                    name = "Borrador",
-                    value = "{\n  \"items\": [ { \"productoId\": \"507f1f77bcf86cd799439011\", \"cantidad\": 1 } ],\n  \"cliente\": { \"nombre\": \"Empresa XYZ\" }\n}"
-                )
-            )
-        )
+        description = "Crea factura sin descontar stock (para cotizaciones). Usar POST /facturas/{id}/emitir para emitirla."
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Borrador creado",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Factura.class)) ),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Error interno", content = @Content)
+    })
     @PostMapping(path = "/borrador", consumes = "application/json")
     public ResponseEntity<?> crearBorrador(
         @Valid @RequestBody FacturaRequest facturaRequest,
@@ -97,10 +95,16 @@ public class FacturaController {
         }
     }
 
-    @Operation(
-        summary = "Emitir borrador",
+    @Operation(summary = "Emitir borrador",
         description = "Emite un borrador (descuenta stock y cambia estado a EMITIDA)"
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Borrador emitido",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Factura.class)) ),
+        @ApiResponse(responseCode = "404", description = "Borrador no encontrado", content = @Content),
+        @ApiResponse(responseCode = "409", description = "Conflicto al emitir", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Error interno", content = @Content)
+    })
     @PostMapping("/{id}/emitir")
     public ResponseEntity<?> emitirBorrador(@PathVariable String id, Authentication authentication) {
         try {
@@ -116,10 +120,16 @@ public class FacturaController {
         }
     }
 
-    @Operation(
-        summary = "Anular factura",
+    @Operation(summary = "Anular factura",
         description = "Anula una factura emitida (NO devuelve stock automáticamente)"
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Factura anulada",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Factura.class)) ),
+        @ApiResponse(responseCode = "404", description = "Factura no encontrada", content = @Content),
+        @ApiResponse(responseCode = "409", description = "No se puede anular", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Error interno", content = @Content)
+    })
     @PostMapping("/{id}/anular")
     public ResponseEntity<?> anularFactura(
         @PathVariable String id,
@@ -138,10 +148,17 @@ public class FacturaController {
         }
     }
 
-    @Operation(
-        summary = "Checkout carrito",
+    @Operation(summary = "Checkout carrito",
         description = "Crea factura EMITIDA desde carrito. SIEMPRE descuenta stock y calcula precios/IVA desde productos."
     )
+    @ApiResponses({
+        @ApiResponse(responseCode = "201", description = "Factura creada desde carrito",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Factura.class)) ),
+        @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content),
+        @ApiResponse(responseCode = "401", description = "No autenticado", content = @Content),
+        @ApiResponse(responseCode = "409", description = "Conflicto (stock)", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Error interno", content = @Content)
+    })
     @PostMapping(path = "/checkout", consumes = "application/json")
     public ResponseEntity<?> checkout(@RequestBody Map<String, Object> body, Authentication authentication) {
         String userId = authentication == null ? null : authentication.getName();
@@ -160,6 +177,11 @@ public class FacturaController {
     }
 
     @Operation(summary = "Obtener factura por id")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Factura encontrada",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Factura.class)) ),
+        @ApiResponse(responseCode = "404", description = "Factura no encontrada", content = @Content)
+    })
     @GetMapping("/{id}")
     public ResponseEntity<?> getFactura(@PathVariable String id) {
         var maybe = facturaService.getById(id);
@@ -168,6 +190,12 @@ public class FacturaController {
     }
 
     @Operation(summary = "Descargar PDF de factura con IVA")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "PDF de la factura",
+            content = @Content(mediaType = "application/pdf", schema = @Schema(type = "string", format = "binary")) ),
+        @ApiResponse(responseCode = "404", description = "Factura no encontrada", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Error interno", content = @Content)
+    })
     @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     public ResponseEntity<byte[]> descargarPdf(@PathVariable String id) {
         var maybe = facturaService.getById(id);
@@ -182,6 +210,11 @@ public class FacturaController {
     }
 
     @Operation(summary = "Obtener factura por número")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Factura encontrada",
+            content = @Content(mediaType = "application/json", schema = @Schema(implementation = Factura.class)) ),
+        @ApiResponse(responseCode = "404", description = "Factura no encontrada", content = @Content)
+    })
     @GetMapping("/numero/{numero}")
     public ResponseEntity<?> getPorNumero(@PathVariable String numero) {
         Factura f = facturaService.findByNumeroFactura(numero);
@@ -190,10 +223,24 @@ public class FacturaController {
     }
 
     @Operation(summary = "Listar facturas por usuario")
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Lista de facturas",
+            content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = Factura.class))) )
+    })
     @GetMapping
-    public ResponseEntity<?> listarPorUsuario(@RequestParam(required = false) String userId) {
-        if (userId == null) return ResponseEntity.ok(Map.of("facturas", List.of()));
+    public ResponseEntity<?> listarPorUsuario(@RequestParam(required = false) String userId, Authentication authentication) {
+        // Si el frontend no envía userId, intentamos obtenerlo desde el token (Authentication)
+        if (userId == null) {
+            userId = authentication == null ? null : authentication.getName();
+        }
+        logger.debug("Listar facturas solicitado por userId param='{}', authName='{}'", userId, authentication == null ? null : authentication.getName());
+        // Si todavía no hay userId, devolvemos lista vacía (cliente sin autenticar)
+        if (userId == null) {
+            logger.debug("No userId disponible en request; devolviendo lista vacía");
+            return ResponseEntity.ok(Map.of("facturas", List.of()));
+        }
         List<Factura> r = facturaService.listarPorUsuario(userId);
+        logger.debug("Facturas encontradas para userId {}: {}", userId, r == null ? 0 : r.size());
         return ResponseEntity.ok(Map.of("facturas", r));
     }
 

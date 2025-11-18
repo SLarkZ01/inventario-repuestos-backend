@@ -298,7 +298,9 @@ public class FacturaServiceV2 {
     }
 
     /**
-     * DESCUENTA STOCK de forma atómica por almacén.
+     * DESCUENTA STOCK de forma atómica con fallback inteligente:
+     * 1. Si hay stock por almacén → descuenta de almacenes
+     * 2. Si NO hay almacenes → descuenta de producto.stock (modo simple)
      * Lanza excepción si no hay stock suficiente.
      */
     private void descontarStockFactura(Factura factura, String realizadoPorHex) {
@@ -308,21 +310,30 @@ public class FacturaServiceV2 {
             cantidadesPorProducto.merge(item.getProductoId(), item.getCantidad(), Integer::sum);
         }
 
-        // Descontar de almacenes
+        // Descontar de almacenes o fallback a producto.stock
         for (Map.Entry<String, Integer> entry : cantidadesPorProducto.entrySet()) {
             String productoId = entry.getKey();
             int cantidadTotal = entry.getValue();
-            int restante = cantidadTotal;
 
             // Obtener stock por almacén
             var stockRows = stockService.getStockByProducto(productoId);
 
             if (stockRows.isEmpty()) {
-                throw new IllegalStateException(
-                    String.format("Producto %s sin stock en ningún almacén", productoId)
-                );
+                // FALLBACK: No hay almacenes configurados → usar producto.stock directamente
+                logger.info("Producto {} sin almacenes configurados, usando producto.stock (modo simple)", productoId);
+                var producto = productoService.decreaseStockIfAvailable(productoId, cantidadTotal);
+                if (producto == null) {
+                    throw new IllegalStateException(
+                        String.format("Stock insuficiente para producto %s (se requieren %d unidades)",
+                            productoId, cantidadTotal)
+                    );
+                }
+                logger.info("Stock descontado de producto.stock: {} unidades de producto {}", cantidadTotal, productoId);
+                continue; // Siguiente producto
             }
 
+            // Descontar de almacenes (modo avanzado)
+            int restante = cantidadTotal;
             for (var stockRow : stockRows) {
                 if (restante <= 0) break;
 
