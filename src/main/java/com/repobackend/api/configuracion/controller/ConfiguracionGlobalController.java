@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 /**
  * Controlador REST para gestionar la configuración global del sistema.
@@ -80,8 +81,7 @@ public class ConfiguracionGlobalController {
         return ResponseEntity.ok(service.obtenerConfiguracion());
     }
 
-    @PostMapping  // Acepta POST para compatibilidad
-    @PutMapping   // También acepta PUT (semánticamente correcto)
+    @RequestMapping(method = {RequestMethod.POST, RequestMethod.PUT})  // Acepta POST y PUT
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
         summary = "Actualizar configuración global",
