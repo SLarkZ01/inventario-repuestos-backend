@@ -1242,10 +1242,6 @@ paths:
               $ref: '#/components/schemas/FacturaRequest'
         required: true
       responses:
-        '400':
-          description: Datos inválidos
-        '409':
-          description: Conflicto (p.ej. stock insuficiente)
         '500':
           description: Error interno
         '201':
@@ -1254,6 +1250,10 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Factura'
+        '409':
+          description: Conflicto (p.ej. stock insuficiente)
+        '400':
+          description: Datos inválidos
   /api/facturas/{id}/emitir:
     post:
       tags:
@@ -1268,8 +1268,6 @@ paths:
         schema:
           type: string
       responses:
-        '409':
-          description: Conflicto al emitir
         '404':
           description: Borrador no encontrado
         '500':
@@ -1280,6 +1278,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Factura'
+        '409':
+          description: Conflicto al emitir
   /api/facturas/{id}/anular:
     post:
       tags:
@@ -1294,18 +1294,18 @@ paths:
         schema:
           type: string
       responses:
-        '404':
-          description: Factura no encontrada
+        '500':
+          description: Error interno
         '200':
           description: Factura anulada
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Factura'
+        '404':
+          description: Factura no encontrada
         '409':
           description: No se puede anular
-        '500':
-          description: Error interno
   /api/facturas/checkout:
     post:
       tags:
@@ -1323,20 +1323,20 @@ paths:
                 type: object
         required: true
       responses:
-        '400':
-          description: Datos inválidos
         '409':
           description: Conflicto (stock)
+        '500':
+          description: Error interno
+        '401':
+          description: No autenticado
         '201':
           description: Factura creada desde carrito
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Factura'
-        '500':
-          description: Error interno
-        '401':
-          description: No autenticado
+        '400':
+          description: Datos inválidos
   /api/facturas/borrador:
     post:
       tags:
@@ -1352,8 +1352,6 @@ paths:
               $ref: '#/components/schemas/FacturaRequest'
         required: true
       responses:
-        '400':
-          description: Datos inválidos
         '201':
           description: Borrador creado
           content:
@@ -1362,6 +1360,8 @@ paths:
                 $ref: '#/components/schemas/Factura'
         '500':
           description: Error interno
+        '400':
+          description: Datos inválidos
   /api/configuracion:
     get:
       tags:
@@ -2504,14 +2504,38 @@ paths:
         schema:
           type: string
       responses:
-        '404':
-          description: Factura no encontrada
         '200':
           description: Factura encontrada
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Factura'
+        '404':
+          description: Factura no encontrada
+    delete:
+      tags:
+      - Facturas
+      summary: Eliminar factura borrador
+      description: Elimina una factura en estado BORRADOR (cotización rechazada o
+        descartada). Solo se pueden eliminar facturas que NO han sido emitidas.
+      operationId: eliminarBorrador
+      parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+      responses:
+        '500':
+          description: Error interno
+        '200':
+          description: Borrador eliminado exitosamente
+          content:
+            application/json: {}
+        '409':
+          description: No se puede eliminar (solo BORRADOR)
+        '404':
+          description: Factura no encontrada
   /api/facturas/{id}/pdf:
     get:
       tags:
@@ -2525,8 +2549,6 @@ paths:
         schema:
           type: string
       responses:
-        '404':
-          description: Factura no encontrada
         '500':
           description: Error interno
         '200':
@@ -2536,6 +2558,8 @@ paths:
               schema:
                 type: string
                 format: binary
+        '404':
+          description: Factura no encontrada
   /api/facturas/numero/{numero}:
     get:
       tags:
@@ -2549,14 +2573,14 @@ paths:
         schema:
           type: string
       responses:
-        '404':
-          description: Factura no encontrada
         '200':
           description: Factura encontrada
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Factura'
+        '404':
+          description: Factura no encontrada
   /api/configuracion/iva-defecto:
     get:
       tags:
