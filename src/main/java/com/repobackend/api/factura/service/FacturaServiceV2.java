@@ -211,6 +211,24 @@ public class FacturaServiceV2 {
         return toResponse(saved);
     }
 
+    /**
+     * Eliminar una factura en estado BORRADOR.
+     * Solo se pueden eliminar facturas que no han sido emitidas (cotizaciones rechazadas).
+     */
+    @Transactional
+    public void eliminarBorrador(String facturaId) {
+        Optional<Factura> maybe = facturaRepository.findById(facturaId);
+        if (maybe.isEmpty()) throw new IllegalArgumentException("Factura no encontrada");
+
+        Factura factura = maybe.get();
+        if (!"BORRADOR".equals(factura.getEstado())) {
+            throw new IllegalStateException("Solo se pueden eliminar facturas en estado BORRADOR. Use /anular para facturas emitidas.");
+        }
+
+        facturaRepository.deleteById(facturaId);
+        logger.info("Factura BORRADOR {} eliminada (cotización rechazada/descartada)", facturaId);
+    }
+
     public Optional<Factura> getById(String id) {
         return facturaRepository.findById(id);
     }
@@ -222,10 +240,18 @@ public class FacturaServiceV2 {
     public List<Factura> listarPorUsuario(String userId) {
         try {
             ObjectId oid = new ObjectId(userId);
-            return facturaRepository.findByRealizadoPor(oid);
+            // Buscar facturas donde el usuario es el cliente O quien la realizó
+            // Esto permite que:
+            // - Next.js muestre facturas creadas por vendedores Android para ese cliente
+            // - Android muestre facturas que el vendedor creó
+            return facturaRepository.findByClienteIdOrRealizadoPor(userId, oid);
         } catch (IllegalArgumentException iae) {
             return List.of();
         }
+    }
+
+    public List<Factura> listarTodas() {
+        return facturaRepository.findAll();
     }
 
     // ========== MÉTODOS PRIVADOS AUXILIARES ==========

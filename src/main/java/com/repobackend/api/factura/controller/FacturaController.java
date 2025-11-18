@@ -148,6 +148,31 @@ public class FacturaController {
         }
     }
 
+    @Operation(summary = "Eliminar factura borrador",
+        description = "Elimina una factura en estado BORRADOR (cotización rechazada o descartada). Solo se pueden eliminar facturas que NO han sido emitidas."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "200", description = "Borrador eliminado exitosamente",
+            content = @Content(mediaType = "application/json") ),
+        @ApiResponse(responseCode = "404", description = "Factura no encontrada", content = @Content),
+        @ApiResponse(responseCode = "409", description = "No se puede eliminar (solo BORRADOR)", content = @Content),
+        @ApiResponse(responseCode = "500", description = "Error interno", content = @Content)
+    })
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminarBorrador(@PathVariable String id) {
+        try {
+            facturaService.eliminarBorrador(id);
+            return ResponseEntity.ok(Map.of("deleted", true, "message", "Factura borrador eliminada exitosamente"));
+        } catch (IllegalArgumentException iae) {
+            return ResponseEntity.status(404).body(Map.of("error", iae.getMessage()));
+        } catch (IllegalStateException ise) {
+            return ResponseEntity.status(409).body(Map.of("error", ise.getMessage()));
+        } catch (Exception ex) {
+            logger.error("Error eliminando borrador: {}", ex.getMessage(), ex);
+            return ResponseEntity.status(500).body(Map.of("error", ex.getMessage()));
+        }
+    }
+
     @Operation(summary = "Checkout carrito",
         description = "Crea factura EMITIDA desde carrito. SIEMPRE descuenta stock y calcula precios/IVA desde productos."
     )
@@ -222,23 +247,39 @@ public class FacturaController {
         return ResponseEntity.ok(Map.of("factura", f));
     }
 
-    @Operation(summary = "Listar facturas por usuario")
+    @Operation(summary = "Listar facturas",
+        description = "Lista facturas. Usuarios ADMIN ven todas las facturas. Usuarios normales ven solo las facturas donde son cliente o las crearon.")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Lista de facturas",
             content = @Content(mediaType = "application/json", array = @ArraySchema(schema = @Schema(implementation = Factura.class))) )
     })
     @GetMapping
     public ResponseEntity<?> listarPorUsuario(@RequestParam(required = false) String userId, Authentication authentication) {
-        // Si el frontend no envía userId, intentamos obtenerlo desde el token (Authentication)
+        // Verificar si es usuario ADMIN
+        boolean isAdmin = authentication != null &&
+                         authentication.getAuthorities().stream()
+                             .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN") || auth.getAuthority().equals("ADMIN"));
+
+        logger.debug("Listar facturas - isAdmin={}, userId param='{}', authName='{}'",
+                    isAdmin, userId, authentication == null ? null : authentication.getName());
+
+        // Si es ADMIN, devolver TODAS las facturas
+        if (isAdmin) {
+            List<Factura> all = facturaService.listarTodas();
+            logger.debug("Usuario ADMIN - devolviendo {} facturas totales", all.size());
+            return ResponseEntity.ok(Map.of("facturas", all));
+        }
+
+        // Usuario normal: filtrar por userId (cliente o creador)
         if (userId == null) {
             userId = authentication == null ? null : authentication.getName();
         }
-        logger.debug("Listar facturas solicitado por userId param='{}', authName='{}'", userId, authentication == null ? null : authentication.getName());
-        // Si todavía no hay userId, devolvemos lista vacía (cliente sin autenticar)
+
         if (userId == null) {
             logger.debug("No userId disponible en request; devolviendo lista vacía");
             return ResponseEntity.ok(Map.of("facturas", List.of()));
         }
+
         List<Factura> r = facturaService.listarPorUsuario(userId);
         logger.debug("Facturas encontradas para userId {}: {}", userId, r == null ? 0 : r.size());
         return ResponseEntity.ok(Map.of("facturas", r));
