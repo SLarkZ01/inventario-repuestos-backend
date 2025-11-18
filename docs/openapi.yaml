@@ -195,40 +195,6 @@ paths:
           description: Permisos insuficientes
         '404':
           description: No encontrado
-  /api/stock/set:
-    put:
-      tags:
-      - Stock
-      summary: Setear stock
-      description: Establece la cantidad exacta de stock en un almacén específico
-        (reemplaza el valor anterior)
-      operationId: set
-      requestBody:
-        description: Cantidad exacta a establecer
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties:
-                type: object
-            examples:
-              Establecer stock:
-                description: Establecer stock
-                value:
-                  productoId: 507f191e810c19729de860ea
-                  almacenId: 507faaa1bcf86cd799439011
-                  cantidad: 100
-        required: true
-      responses:
-        '200':
-          description: Stock establecido exitosamente
-          content:
-            application/json:
-              example:
-                success: true
-                cantidad: 100
-        '400':
-          description: Datos inválidos
   /api/productos/{id}:
     get:
       tags:
@@ -396,142 +362,6 @@ paths:
           description: Producto no encontrado
         '403':
           description: Sin permisos para eliminar este producto
-  /api/configuracion:
-    get:
-      tags:
-      - Configuración Global
-      summary: Obtener configuración global
-      description: 'Obtiene la configuración global del sistema, incluyendo:
-
-        - **tasaIvaPorDefecto**: Tasa de IVA por defecto para productos nuevos (%)
-
-        - **Datos de empresa**: nombre, NIT, dirección, teléfono, etc.
-
-        - **Resolución DIAN**: prefijo, número de resolución, rango autorizado
-
-
-        Si no existe configuración, se crea automáticamente con valores por defecto
-        (IVA 19%).
-
-
-        **Uso en Frontend**: El valor de `tasaIvaPorDefecto` se debe usar al crear
-        nuevos productos
-
-        y puede ser modificado desde el panel de configuración por un ADMIN.
-
-        '
-      operationId: obtenerConfiguracion
-      responses:
-        '200':
-          description: Configuración obtenida exitosamente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
-              example:
-                id: 507f191e810c19729de860ea
-                tasaIvaPorDefecto: 19.0
-                nombreEmpresa: Repuestos ABC S.A.S
-                nit: '900123456'
-                digitoVerificacion: '7'
-                direccion: 'Calle 123 #45-67'
-                telefono: '3001234567'
-                email: contacto@repuestos.com
-                ciudad: Bogotá
-                departamento: Cundinamarca
-                prefijoFactura: FV
-                resolucionDian: '18764123456789'
-                rangoFacturaInicio: 1
-                rangoFacturaFin: 5000
-                proximoNumeroFactura: 1
-                actualizadoEn: '2025-01-17T10:30:00'
-        '401':
-          description: No autenticado
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
-        '403':
-          description: No autorizado (requiere rol ADMIN)
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
-      security:
-      - bearerAuth: []
-    put:
-      tags:
-      - Configuración Global
-      summary: Actualizar configuración global
-      description: 'Actualiza la configuración global del sistema.
-
-        Solo se actualizan los campos enviados (permite actualización parcial).
-
-
-        **Casos de uso principales**:
-
-        - Cambiar tasa de IVA por defecto cuando cambie la legislación colombiana
-
-        - Configurar datos de la empresa para facturas
-
-        - Configurar resolución DIAN para facturación electrónica
-
-
-        **IMPORTANTE**: El cambio de `tasaIvaPorDefecto` NO afecta productos existentes,
-
-        solo se aplica a productos creados después del cambio.
-
-        '
-      operationId: actualizarConfiguracion
-      requestBody:
-        description: Campos a actualizar (todos opcionales)
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConfiguracionGlobalRequest'
-            examples:
-              Cambiar IVA:
-                description: 'Ejemplo: Cambiar IVA de 19% a 21%'
-                value:
-                  tasaIvaPorDefecto: 21.0
-              Configuración completa:
-                description: Configuración completa
-                value:
-                  tasaIvaPorDefecto: 19.0
-                  nombreEmpresa: Repuestos ABC S.A.S
-                  nit: '900123456'
-                  digitoVerificacion: '7'
-                  direccion: 'Calle 123 #45-67'
-                  telefono: '3001234567'
-                  email: contacto@repuestos.com
-                  ciudad: Bogotá
-                  departamento: Cundinamarca
-                  prefijoFactura: FV
-                  resolucionDian: '18764123456789'
-                  rangoFacturaInicio: 1
-                  rangoFacturaFin: 5000
-        required: true
-      responses:
-        '200':
-          description: Configuración actualizada exitosamente
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
-        '401':
-          description: No autenticado
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
-        '403':
-          description: No autorizado (requiere rol ADMIN)
-          content:
-            '*/*':
-              schema:
-                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
-      security:
-      - bearerAuth: []
   /api/categorias/{id}:
     get:
       tags:
@@ -995,6 +825,40 @@ paths:
           description: Código inválido o expirado
         '401':
           description: Usuario no autenticado
+  /api/stock/set:
+    post:
+      tags:
+      - Stock
+      summary: Setear stock
+      description: Establece la cantidad exacta de stock en un almacén específico
+        (reemplaza el valor anterior)
+      operationId: set
+      requestBody:
+        description: Cantidad exacta a establecer
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+            examples:
+              Establecer stock:
+                description: Establecer stock
+                value:
+                  productoId: 507f191e810c19729de860ea
+                  almacenId: 507faaa1bcf86cd799439011
+                  cantidad: 100
+        required: true
+      responses:
+        '200':
+          description: Stock establecido exitosamente
+          content:
+            application/json:
+              example:
+                success: true
+                cantidad: 100
+        '400':
+          description: Datos inválidos
   /api/stock/adjust:
     post:
       tags:
@@ -1357,11 +1221,13 @@ paths:
           type: string
       responses:
         '200':
-          description: OK
+          description: Lista de facturas
           content:
-            '*/*':
+            application/json:
               schema:
-                type: object
+                type: array
+                items:
+                  $ref: '#/components/schemas/Factura'
     post:
       tags:
       - Facturas
@@ -1374,25 +1240,20 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/FacturaRequest'
-            examples:
-              Factura directa:
-                description: Factura directa
-                value:
-                  items:
-                  - productoId: 507f1f77bcf86cd799439011
-                    cantidad: 2
-                  cliente:
-                    nombre: Juan Pérez
-                    documento: '123456789'
-                    direccion: Calle 123
         required: true
       responses:
-        '200':
-          description: OK
+        '400':
+          description: Datos inválidos
+        '409':
+          description: Conflicto (p.ej. stock insuficiente)
+        '500':
+          description: Error interno
+        '201':
+          description: Factura creada y emitida
           content:
-            '*/*':
+            application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/Factura'
   /api/facturas/{id}/emitir:
     post:
       tags:
@@ -1407,12 +1268,18 @@ paths:
         schema:
           type: string
       responses:
+        '409':
+          description: Conflicto al emitir
+        '404':
+          description: Borrador no encontrado
+        '500':
+          description: Error interno
         '200':
-          description: OK
+          description: Borrador emitido
           content:
-            '*/*':
+            application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/Factura'
   /api/facturas/{id}/anular:
     post:
       tags:
@@ -1427,12 +1294,18 @@ paths:
         schema:
           type: string
       responses:
+        '404':
+          description: Factura no encontrada
         '200':
-          description: OK
+          description: Factura anulada
           content:
-            '*/*':
+            application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/Factura'
+        '409':
+          description: No se puede anular
+        '500':
+          description: Error interno
   /api/facturas/checkout:
     post:
       tags:
@@ -1450,12 +1323,20 @@ paths:
                 type: object
         required: true
       responses:
-        '200':
-          description: OK
+        '400':
+          description: Datos inválidos
+        '409':
+          description: Conflicto (stock)
+        '201':
+          description: Factura creada desde carrito
           content:
-            '*/*':
+            application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/Factura'
+        '500':
+          description: Error interno
+        '401':
+          description: No autenticado
   /api/facturas/borrador:
     post:
       tags:
@@ -1469,23 +1350,154 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/FacturaRequest'
-            examples:
-              Borrador:
-                description: Borrador
-                value:
-                  items:
-                  - productoId: 507f1f77bcf86cd799439011
-                    cantidad: 1
-                  cliente:
-                    nombre: Empresa XYZ
         required: true
       responses:
+        '400':
+          description: Datos inválidos
+        '201':
+          description: Borrador creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Factura'
+        '500':
+          description: Error interno
+  /api/configuracion:
+    get:
+      tags:
+      - Configuración Global
+      summary: Obtener configuración global
+      description: 'Obtiene la configuración global del sistema, incluyendo:
+
+        - **tasaIvaPorDefecto**: Tasa de IVA por defecto para productos nuevos (%)
+
+        - **Datos de empresa**: nombre, NIT, dirección, teléfono, etc.
+
+        - **Resolución DIAN**: prefijo, número de resolución, rango autorizado
+
+
+        Si no existe configuración, se crea automáticamente con valores por defecto
+        (IVA 19%).
+
+
+        **Uso en Frontend**: El valor de `tasaIvaPorDefecto` se debe usar al crear
+        nuevos productos
+
+        y puede ser modificado desde el panel de configuración por un ADMIN.
+
+        '
+      operationId: obtenerConfiguracion
+      responses:
         '200':
-          description: OK
+          description: Configuración obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+              example:
+                id: 507f191e810c19729de860ea
+                tasaIvaPorDefecto: 19.0
+                nombreEmpresa: Repuestos ABC S.A.S
+                nit: '900123456'
+                digitoVerificacion: '7'
+                direccion: 'Calle 123 #45-67'
+                telefono: '3001234567'
+                email: contacto@repuestos.com
+                ciudad: Bogotá
+                departamento: Cundinamarca
+                prefijoFactura: FV
+                resolucionDian: '18764123456789'
+                rangoFacturaInicio: 1
+                rangoFacturaFin: 5000
+                proximoNumeroFactura: 1
+                actualizadoEn: '2025-01-17T10:30:00'
+        '401':
+          description: No autenticado
           content:
             '*/*':
               schema:
-                type: object
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+        '403':
+          description: No autorizado (requiere rol ADMIN)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+      security:
+      - bearerAuth: []
+    post:
+      tags:
+      - Configuración Global
+      summary: Actualizar configuración global
+      description: 'Actualiza la configuración global del sistema.
+
+        Solo se actualizan los campos enviados (permite actualización parcial).
+
+
+        **Casos de uso principales**:
+
+        - Cambiar tasa de IVA por defecto cuando cambie la legislación colombiana
+
+        - Configurar datos de la empresa para facturas
+
+        - Configurar resolución DIAN para facturación electrónica
+
+
+        **IMPORTANTE**: El cambio de `tasaIvaPorDefecto` NO afecta productos existentes,
+
+        solo se aplica a productos creados después del cambio.
+
+        '
+      operationId: actualizarConfiguracion
+      requestBody:
+        description: Campos a actualizar (todos opcionales)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConfiguracionGlobalRequest'
+            examples:
+              Cambiar IVA:
+                description: 'Ejemplo: Cambiar IVA de 19% a 21%'
+                value:
+                  tasaIvaPorDefecto: 21.0
+              Configuración completa:
+                description: Configuración completa
+                value:
+                  tasaIvaPorDefecto: 19.0
+                  nombreEmpresa: Repuestos ABC S.A.S
+                  nit: '900123456'
+                  digitoVerificacion: '7'
+                  direccion: 'Calle 123 #45-67'
+                  telefono: '3001234567'
+                  email: contacto@repuestos.com
+                  ciudad: Bogotá
+                  departamento: Cundinamarca
+                  prefijoFactura: FV
+                  resolucionDian: '18764123456789'
+                  rangoFacturaInicio: 1
+                  rangoFacturaFin: 5000
+        required: true
+      responses:
+        '200':
+          description: Configuración actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+        '401':
+          description: No autenticado
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+        '403':
+          description: No autorizado (requiere rol ADMIN)
+          content:
+            '*/*':
+              schema:
+                $ref: '#/components/schemas/ConfiguracionGlobalResponse'
+      security:
+      - bearerAuth: []
   /api/categorias:
     get:
       tags:
@@ -2492,12 +2504,14 @@ paths:
         schema:
           type: string
       responses:
+        '404':
+          description: Factura no encontrada
         '200':
-          description: OK
+          description: Factura encontrada
           content:
-            '*/*':
+            application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/Factura'
   /api/facturas/{id}/pdf:
     get:
       tags:
@@ -2511,13 +2525,17 @@ paths:
         schema:
           type: string
       responses:
+        '404':
+          description: Factura no encontrada
+        '500':
+          description: Error interno
         '200':
-          description: OK
+          description: PDF de la factura
           content:
             application/pdf:
               schema:
                 type: string
-                format: byte
+                format: binary
   /api/facturas/numero/{numero}:
     get:
       tags:
@@ -2531,12 +2549,14 @@ paths:
         schema:
           type: string
       responses:
+        '404':
+          description: Factura no encontrada
         '200':
-          description: OK
+          description: Factura encontrada
           content:
-            '*/*':
+            application/json:
               schema:
-                type: object
+                $ref: '#/components/schemas/Factura'
   /api/configuracion/iva-defecto:
     get:
       tags:
@@ -2725,84 +2745,6 @@ components:
             type: string
         tallerId:
           type: string
-    ConfiguracionGlobalRequest:
-      type: object
-      properties:
-        tasaIvaPorDefecto:
-          type: number
-          format: double
-        nombreEmpresa:
-          type: string
-        nit:
-          type: string
-        digitoVerificacion:
-          type: string
-        direccion:
-          type: string
-        telefono:
-          type: string
-        email:
-          type: string
-        ciudad:
-          type: string
-        departamento:
-          type: string
-        prefijoFactura:
-          type: string
-        resolucionDian:
-          type: string
-        fechaResolucionDian:
-          type: string
-          format: date-time
-        rangoFacturaInicio:
-          type: integer
-          format: int64
-        rangoFacturaFin:
-          type: integer
-          format: int64
-    ConfiguracionGlobalResponse:
-      type: object
-      properties:
-        id:
-          type: string
-        tasaIvaPorDefecto:
-          type: number
-          format: double
-        nombreEmpresa:
-          type: string
-        nit:
-          type: string
-        digitoVerificacion:
-          type: string
-        direccion:
-          type: string
-        telefono:
-          type: string
-        email:
-          type: string
-        ciudad:
-          type: string
-        departamento:
-          type: string
-        prefijoFactura:
-          type: string
-        resolucionDian:
-          type: string
-        fechaResolucionDian:
-          type: string
-          format: date-time
-        rangoFacturaInicio:
-          type: integer
-          format: int64
-        rangoFacturaFin:
-          type: integer
-          format: int64
-        proximoNumeroFactura:
-          type: integer
-          format: int64
-        actualizadoEn:
-          type: string
-          format: date-time
     CategoriaRequest:
       required:
       - nombre
@@ -2909,6 +2851,194 @@ components:
           nombre: Juan Pérez
           documento: '123456789'
           direccion: Calle 123
+    ClienteEmbebido:
+      type: object
+      properties:
+        nombre:
+          type: string
+        documento:
+          type: string
+        direccion:
+          type: string
+    Factura:
+      type: object
+      properties:
+        id:
+          type: string
+        numeroFactura:
+          type: string
+        prefijo:
+          type: string
+        resolucionDian:
+          type: string
+        fechaResolucion:
+          type: string
+          format: date-time
+        rangoAutorizado:
+          type: string
+        cliente:
+          $ref: '#/components/schemas/ClienteEmbebido'
+        clienteId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FacturaItem'
+        subtotal:
+          type: number
+          format: double
+        totalDescuentos:
+          type: number
+          format: double
+        baseImponible:
+          type: number
+          format: double
+        totalIva:
+          type: number
+          format: double
+        total:
+          type: number
+          format: double
+        realizadoPor:
+          $ref: '#/components/schemas/ObjectId'
+        estado:
+          type: string
+        creadoEn:
+          type: string
+          format: date-time
+        emitidaEn:
+          type: string
+          format: date-time
+        cufe:
+          type: string
+        qrCode:
+          type: string
+        xmlUrl:
+          type: string
+        pdfUrl:
+          type: string
+        dianResponse:
+          type: string
+    FacturaItem:
+      type: object
+      properties:
+        productoId:
+          type: string
+        nombreProducto:
+          type: string
+        codigoProducto:
+          type: string
+        cantidad:
+          type: integer
+          format: int32
+        precioUnitario:
+          type: number
+          format: double
+        descuento:
+          type: number
+          format: double
+        baseImponible:
+          type: number
+          format: double
+        tasaIva:
+          type: number
+          format: double
+        valorIva:
+          type: number
+          format: double
+        subtotal:
+          type: number
+          format: double
+        totalItem:
+          type: number
+          format: double
+    ObjectId:
+      type: object
+      properties:
+        timestamp:
+          type: integer
+          format: int32
+        date:
+          type: string
+          format: date-time
+    ConfiguracionGlobalRequest:
+      type: object
+      properties:
+        tasaIvaPorDefecto:
+          type: number
+          format: double
+        nombreEmpresa:
+          type: string
+        nit:
+          type: string
+        digitoVerificacion:
+          type: string
+        direccion:
+          type: string
+        telefono:
+          type: string
+        email:
+          type: string
+        ciudad:
+          type: string
+        departamento:
+          type: string
+        prefijoFactura:
+          type: string
+        resolucionDian:
+          type: string
+        fechaResolucionDian:
+          type: string
+          format: date-time
+        rangoFacturaInicio:
+          type: integer
+          format: int64
+        rangoFacturaFin:
+          type: integer
+          format: int64
+    ConfiguracionGlobalResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        tasaIvaPorDefecto:
+          type: number
+          format: double
+        nombreEmpresa:
+          type: string
+        nit:
+          type: string
+        digitoVerificacion:
+          type: string
+        direccion:
+          type: string
+        telefono:
+          type: string
+        email:
+          type: string
+        ciudad:
+          type: string
+        departamento:
+          type: string
+        prefijoFactura:
+          type: string
+        resolucionDian:
+          type: string
+        fechaResolucionDian:
+          type: string
+          format: date-time
+        rangoFacturaInicio:
+          type: integer
+          format: int64
+        rangoFacturaFin:
+          type: integer
+          format: int64
+        proximoNumeroFactura:
+          type: integer
+          format: int64
+        actualizadoEn:
+          type: string
+          format: date-time
     CarritoItemRequest:
       required:
       - cantidad
