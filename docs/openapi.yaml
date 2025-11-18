@@ -2102,7 +2102,8 @@ paths:
       - Stock
       summary: Obtener stock por producto
       description: Devuelve el stock disponible de un producto desglosado por almacén
-        y el total consolidado
+        y el total consolidado. Si se envía almacenId, incluye además la cantidad
+        específica en ese almacén.
       operationId: getByProducto
       parameters:
       - name: productoId
@@ -2112,6 +2113,13 @@ paths:
         schema:
           type: string
         example: 507f191e810c19729de860ea
+      - name: almacenId
+        in: query
+        description: ID del almacén (opcional)
+        required: false
+        schema:
+          type: string
+        example: 507faaa1bcf86cd799439011
       responses:
         '200':
           description: Stock obtenido exitosamente
@@ -2148,6 +2156,36 @@ paths:
           description: Registro eliminado
         '404':
           description: No encontrado
+  /api/stock/{productoId}:
+    get:
+      tags:
+      - Stock
+      summary: Obtener stock por producto (ruta alternativa)
+      description: Variante con path param para facilitar proxys. Acepta query almacenId
+        opcional.
+      operationId: getByProductoPath
+      parameters:
+      - name: productoId
+        in: path
+        description: ID del producto
+        required: true
+        schema:
+          type: string
+        example: 507f191e810c19729de860ea
+      - name: almacenId
+        in: query
+        description: ID del almacén (opcional)
+        required: false
+        schema:
+          type: string
+        example: 507faaa1bcf86cd799439011
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
   /api/public/productos:
     get:
       tags:
@@ -2666,7 +2704,13 @@ components:
         stock:
           minimum: 0
           type: integer
+          description: 'Stock inicial del producto (opcional). MODO SIMPLE: Si se
+            especifica, el stock se almacena directamente en el producto y las facturas
+            descuentan de aquí. MODO AVANZADO: Para gestión multi-almacén, crear el
+            producto con stock=0 y luego usar POST /api/stock/set para asignar a almacenes
+            específicos. El sistema detecta automáticamente qué modo usar al facturar.'
           format: int32
+          example: 100
         categoriaId:
           type: string
         listaMedios:
