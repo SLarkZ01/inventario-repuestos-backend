@@ -107,6 +107,12 @@
             <artifactId>jackson-dataformat-yaml</artifactId>
         </dependency>
 
+        <!-- Thymeleaf para plantillas HTML (render de factura) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
         <!-- PDF rendering: OpenHTMLToPDF -->
         <dependency>
             <groupId>com.openhtmltopdf</groupId>

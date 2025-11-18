@@ -5,7 +5,10 @@ import java.util.List;
 import com.repobackend.api.cliente.dto.ClienteRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(name = "FacturaRequest", description = "Solicitud para crear o emitir una factura. Los precios e IVA se calculan en el servidor a partir de los productos.",
+        example = "{\n  \"items\": [ { \"productoId\": \"507f1f77bcf86cd799439011\", \"cantidad\": 2 } ],\n  \"cliente\": { \"nombre\": \"Juan Pérez\", \"documento\": \"123456789\", \"direccion\": \"Calle 123\" }\n}")
 public class FacturaRequest {
     private String numeroFactura;
     private String clienteId;

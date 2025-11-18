@@ -1,4 +1,3 @@
-.openapi-generator-ignore
 apis/AdminUsersApi.ts
 apis/AuthApi.ts
 apis/CarritosApi.ts

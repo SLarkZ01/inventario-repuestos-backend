@@ -50,7 +50,7 @@ export interface ProductoRequest {
      */
     tasaIva?: number;
     /**
-     * 
+     * Stock inicial del producto (opcional). MODO SIMPLE: Si se especifica, el stock se almacena directamente en el producto y las facturas descuentan de aquí. MODO AVANZADO: Para gestión multi-almacén, crear el producto con stock=0 y luego usar POST /api/stock/set para asignar a almacenes específicos. El sistema detecta automáticamente qué modo usar al facturar.
      * @type {number}
      * @memberof ProductoRequest
      */

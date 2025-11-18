@@ -26,6 +26,12 @@ export interface AdjustRequest {
 
 export interface GetByProductoRequest {
     productoId: string;
+    almacenId?: string;
+}
+
+export interface GetByProductoPathRequest {
+    productoId: string;
+    almacenId?: string;
 }
 
 export interface SetRequest {
@@ -140,7 +146,7 @@ export class StockApi extends runtime.BaseAPI {
     }
 
     /**
-     * Devuelve el stock disponible de un producto desglosado por almacén y el total consolidado
+     * Devuelve el stock disponible de un producto desglosado por almacén y el total consolidado. Si se envía almacenId, incluye además la cantidad específica en ese almacén.
      * Obtener stock por producto
      */
     async getByProductoRaw(requestParameters: GetByProductoRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
@@ -155,6 +161,10 @@ export class StockApi extends runtime.BaseAPI {
 
         if (requestParameters['productoId'] != null) {
             queryParameters['productoId'] = requestParameters['productoId'];
+        }
+
+        if (requestParameters['almacenId'] != null) {
+            queryParameters['almacenId'] = requestParameters['almacenId'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
@@ -178,11 +188,58 @@ export class StockApi extends runtime.BaseAPI {
     }
 
     /**
-     * Devuelve el stock disponible de un producto desglosado por almacén y el total consolidado
+     * Devuelve el stock disponible de un producto desglosado por almacén y el total consolidado. Si se envía almacenId, incluye además la cantidad específica en ese almacén.
      * Obtener stock por producto
      */
     async getByProducto(requestParameters: GetByProductoRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<void> {
         await this.getByProductoRaw(requestParameters, initOverrides);
+    }
+
+    /**
+     * Variante con path param para facilitar proxys. Acepta query almacenId opcional.
+     * Obtener stock por producto (ruta alternativa)
+     */
+    async getByProductoPathRaw(requestParameters: GetByProductoPathRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<object>> {
+        if (requestParameters['productoId'] == null) {
+            throw new runtime.RequiredError(
+                'productoId',
+                'Required parameter "productoId" was null or undefined when calling getByProductoPath().'
+            );
+        }
+
+        const queryParameters: any = {};
+
+        if (requestParameters['almacenId'] != null) {
+            queryParameters['almacenId'] = requestParameters['almacenId'];
+        }
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = await token("bearerAuth", []);
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/api/stock/{productoId}`.replace(`{${"productoId"}}`, encodeURIComponent(String(requestParameters['productoId']))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse<any>(response);
+    }
+
+    /**
+     * Variante con path param para facilitar proxys. Acepta query almacenId opcional.
+     * Obtener stock por producto (ruta alternativa)
+     */
+    async getByProductoPath(requestParameters: GetByProductoPathRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<object> {
+        const response = await this.getByProductoPathRaw(requestParameters, initOverrides);
+        return await response.value();
     }
 
     /**

@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,6 +22,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.Parameter;
 
 @RestController
 @RequestMapping("/api/stock")
@@ -34,9 +36,10 @@ public class StockController {
 
     @Operation(
         summary = "Obtener stock por producto",
-        description = "Devuelve el stock disponible de un producto desglosado por almacén y el total consolidado",
+        description = "Devuelve el stock disponible de un producto desglosado por almacén y el total consolidado. Si se envía almacenId, incluye además la cantidad específica en ese almacén.",
         parameters = {
-            @io.swagger.v3.oas.annotations.Parameter(name = "productoId", description = "ID del producto", required = true, example = "507f191e810c19729de860ea")
+            @Parameter(name = "productoId", description = "ID del producto", required = true, example = "507f191e810c19729de860ea"),
+            @Parameter(name = "almacenId", description = "ID del almacén (opcional)", required = false, example = "507faaa1bcf86cd799439011")
         },
         responses = {
             @ApiResponse(responseCode = "200", description = "Stock obtenido exitosamente",
@@ -49,9 +52,40 @@ public class StockController {
         }
     )
     @GetMapping
-    public ResponseEntity<?> getByProducto(@RequestParam String productoId) {
+    public ResponseEntity<?> getByProducto(@RequestParam String productoId, @RequestParam(required = false) String almacenId) {
         var rows = stockService.getStockByProducto(productoId);
-        return ResponseEntity.ok(Map.of("stockByAlmacen", rows, "total", stockService.getTotalStock(productoId)));
+        int total = stockService.getTotalStock(productoId);
+        if (almacenId == null || almacenId.isBlank()) {
+            return ResponseEntity.ok(Map.of("stockByAlmacen", rows, "total", total));
+        }
+        // buscar cantidad para el almacén solicitado
+        int qty = 0;
+        for (var r : rows) {
+            if (almacenId.equals(r.getAlmacenId())) {
+                qty = r.getCantidad() == null ? 0 : r.getCantidad();
+                break;
+            }
+        }
+        return ResponseEntity.ok(Map.of(
+            "stockByAlmacen", rows,
+            "total", total,
+            "productoId", productoId,
+            "almacenId", almacenId,
+            "cantidadAlmacen", qty
+        ));
+    }
+
+    @Operation(
+        summary = "Obtener stock por producto (ruta alternativa)",
+        description = "Variante con path param para facilitar proxys. Acepta query almacenId opcional.",
+        parameters = {
+            @Parameter(name = "productoId", description = "ID del producto", required = true, example = "507f191e810c19729de860ea"),
+            @Parameter(name = "almacenId", description = "ID del almacén (opcional)", required = false, example = "507faaa1bcf86cd799439011")
+        }
+    )
+    @GetMapping("/{productoId}")
+    public ResponseEntity<?> getByProductoPath(@PathVariable String productoId, @RequestParam(required = false) String almacenId) {
+        return getByProducto(productoId, almacenId);
     }
 
     @Operation(
@@ -116,7 +150,8 @@ public class StockController {
             @ApiResponse(responseCode = "400", description = "Datos inválidos", content = @Content)
         }
     )
-    @PutMapping("/set")
+    @PostMapping("/set")  // Acepta POST para compatibilidad con frontend
+    @PutMapping("/set")   // También acepta PUT (semánticamente correcto)
     public ResponseEntity<?> set(@RequestBody Map<String, Object> body, Authentication authentication) {
         String productoId = (String) body.get("productoId");
         String almacenId = (String) body.get("almacenId");

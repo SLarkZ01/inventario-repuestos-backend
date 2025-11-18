@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+  <meta charset="UTF-8"/>
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; color:#222; }
+    h1, h2, h3 { margin: 0 0 8px 0; }
+    .right { text-align:right; }
+    .box { border:1px solid #ddd; padding:10px; border-radius:6px; }
+
+    /* Layout compatible con CSS 2.1 (sin flex) */
+    .header-table { width:100%; border-collapse: collapse; margin-bottom:16px; }
+    .header-table td { vertical-align: top; }
+
+    .two-col-table { width:100%; border-collapse: separate; border-spacing:16px 0; }
+    .two-col-table td { vertical-align: top; }
+
+    table.items { width:100%; border-collapse: collapse; margin-top: 12px; }
+    table.items th, table.items td { border: 1px solid #ddd; padding: 6px; text-align: left; }
+    table.items th { background: #f8f8f8; }
+
+    .footnote { margin-top: 20px; font-size: 10px; color: #666; }
+  </style>
+</head>
+<body>
+  <table class="header-table">
+    <tr>
+      <td>
+        <div style="font-size: 14px; font-weight: bold;"> <span th:text="${empresaNombre}">Mi Empresa</span></div>
+        <div th:text="${empresaNit}">NIT 123456789-0</div>
+        <div th:text="${empresaDireccion}">Calle 123 #45-67</div>
+      </td>
+      <td class="right">
+        <h2>Factura <span th:text="${numero}">0001</span></h2>
+        <div>Fecha: <span th:text="${fecha}">2025-01-01</span></div>
+        <div>Estado: <span th:text="${estado}">EMITIDA</span></div>
+      </td>
+    </tr>
+  </table>
+
+  <table class="two-col-table">
+    <tr>
+      <td width="50%">
+        <div class="box">
+          <h3>Cliente</h3>
+          <div><strong>Nombre:</strong> <span th:text="${cliente.nombre}">John Doe</span></div>
+          <div><strong>Documento:</strong> <span th:text="${cliente.documento}">123456789</span></div>
+          <div><strong>Dirección:</strong> <span th:text="${cliente.direccion}">Calle Falsa 123</span></div>
+        </div>
+      </td>
+      <td width="50%">
+        <div class="box">
+          <h3>Resumen</h3>
+          <div><strong>Subtotal:</strong> $ <span th:text="${subtotal}">0.00</span></div>
+          <div><strong>Descuentos:</strong> $ <span th:text="${descuentos}">0.00</span></div>
+          <div><strong>Base Imponible:</strong> $ <span th:text="${base}">0.00</span></div>
+          <div><strong>IVA:</strong> $ <span th:text="${iva}">0.00</span></div>
+          <div style="font-size:14px"><strong>TOTAL:</strong> $ <span th:text="${total}">0.00</span></div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <table class="items">
+    <thead>
+      <tr>
+        <th>Producto</th>
+        <th class="right">Cant.</th>
+        <th class="right">Precio Unit.</th>
+        <th class="right">Subtotal</th>
+        <th class="right">IVA (%)</th>
+        <th class="right">IVA Valor</th>
+        <th class="right">Total Item</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="it : ${items}">
+        <td th:text="${it.nombre}">Producto</td>
+        <td class="right" th:text="${it.cantidad}">1</td>
+        <td class="right" th:text="${it.precio}">10.00</td>
+        <td class="right" th:text="${it.subtotal}">10.00</td>
+        <td class="right" th:text="${it.tasaIva}">19.0</td>
+        <td class="right" th:text="${it.valorIva}">1.90</td>
+        <td class="right" th:text="${it.total}">11.90</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footnote">
+    Este documento es un comprobante interno. Para facturación electrónica DIAN, integrar un proveedor autorizado (OFEs) o la API DIAN.
+  </div>
+</body>
+</html>

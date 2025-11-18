@@ -1374,6 +1374,17 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/FacturaRequest'
+            examples:
+              Factura directa:
+                description: Factura directa
+                value:
+                  items:
+                  - productoId: 507f1f77bcf86cd799439011
+                    cantidad: 2
+                  cliente:
+                    nombre: Juan Pérez
+                    documento: '123456789'
+                    direccion: Calle 123
         required: true
       responses:
         '200':
@@ -1458,6 +1469,15 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/FacturaRequest'
+            examples:
+              Borrador:
+                description: Borrador
+                value:
+                  items:
+                  - productoId: 507f1f77bcf86cd799439011
+                    cantidad: 1
+                  cliente:
+                    nombre: Empresa XYZ
         required: true
       responses:
         '200':
@@ -2082,7 +2102,8 @@ paths:
       - Stock
       summary: Obtener stock por producto
       description: Devuelve el stock disponible de un producto desglosado por almacén
-        y el total consolidado
+        y el total consolidado. Si se envía almacenId, incluye además la cantidad
+        específica en ese almacén.
       operationId: getByProducto
       parameters:
       - name: productoId
@@ -2092,6 +2113,13 @@ paths:
         schema:
           type: string
         example: 507f191e810c19729de860ea
+      - name: almacenId
+        in: query
+        description: ID del almacén (opcional)
+        required: false
+        schema:
+          type: string
+        example: 507faaa1bcf86cd799439011
       responses:
         '200':
           description: Stock obtenido exitosamente
@@ -2128,6 +2156,36 @@ paths:
           description: Registro eliminado
         '404':
           description: No encontrado
+  /api/stock/{productoId}:
+    get:
+      tags:
+      - Stock
+      summary: Obtener stock por producto (ruta alternativa)
+      description: Variante con path param para facilitar proxys. Acepta query almacenId
+        opcional.
+      operationId: getByProductoPath
+      parameters:
+      - name: productoId
+        in: path
+        description: ID del producto
+        required: true
+        schema:
+          type: string
+        example: 507f191e810c19729de860ea
+      - name: almacenId
+        in: query
+        description: ID del almacén (opcional)
+        required: false
+        schema:
+          type: string
+        example: 507faaa1bcf86cd799439011
+      responses:
+        '200':
+          description: OK
+          content:
+            '*/*':
+              schema:
+                type: object
   /api/public/productos:
     get:
       tags:
@@ -2646,7 +2704,13 @@ components:
         stock:
           minimum: 0
           type: integer
+          description: 'Stock inicial del producto (opcional). MODO SIMPLE: Si se
+            especifica, el stock se almacena directamente en el producto y las facturas
+            descuentan de aquí. MODO AVANZADO: Para gestión multi-almacén, crear el
+            producto con stock=0 y luego usar POST /api/stock/set para asignar a almacenes
+            específicos. El sistema detecta automáticamente qué modo usar al facturar.'
           format: int32
+          example: 100
         categoriaId:
           type: string
         listaMedios:
@@ -2798,19 +2862,21 @@ components:
     FacturaItemRequest:
       required:
       - cantidad
-      - precioUnitario
       - productoId
       type: object
       properties:
         productoId:
           type: string
+          description: ID del producto a facturar
+          example: 507f1f77bcf86cd799439011
         cantidad:
           minimum: 1
           type: integer
+          description: Cantidad a facturar
           format: int32
-        precioUnitario:
-          type: number
-          format: double
+          example: 2
+      description: Item de la factura. Solo se envían productoId y cantidad; el precio
+        e IVA se toman del producto en el servidor.
     FacturaRequest:
       required:
       - items
@@ -2833,6 +2899,16 @@ components:
           type: string
         estado:
           type: string
+      description: Solicitud para crear o emitir una factura. Los precios e IVA se
+        calculan en el servidor a partir de los productos.
+      example:
+        items:
+        - productoId: 507f1f77bcf86cd799439011
+          cantidad: 2
+        cliente:
+          nombre: Juan Pérez
+          documento: '123456789'
+          direccion: Calle 123
     CarritoItemRequest:
       required:
       - cantidad

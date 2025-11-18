@@ -27,7 +27,7 @@ import {
 } from './ClienteRequest';
 
 /**
- * 
+ * Solicitud para crear o emitir una factura. Los precios e IVA se calculan en el servidor a partir de los productos.
  * @export
  * @interface FacturaRequest
  */

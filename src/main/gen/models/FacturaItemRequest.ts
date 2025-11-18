@@ -14,29 +14,23 @@
 
 import { mapValues } from '../runtime';
 /**
- * 
+ * Item de la factura. Solo se envían productoId y cantidad; el precio e IVA se toman del producto en el servidor.
  * @export
  * @interface FacturaItemRequest
  */
 export interface FacturaItemRequest {
     /**
-     * 
+     * ID del producto a facturar
      * @type {string}
      * @memberof FacturaItemRequest
      */
     productoId: string;
     /**
-     * 
+     * Cantidad a facturar
      * @type {number}
      * @memberof FacturaItemRequest
      */
     cantidad: number;
-    /**
-     * 
-     * @type {number}
-     * @memberof FacturaItemRequest
-     */
-    precioUnitario: number;
 }
 
 /**
@@ -45,7 +39,6 @@ export interface FacturaItemRequest {
 export function instanceOfFacturaItemRequest(value: object): value is FacturaItemRequest {
     if (!('productoId' in value) || value['productoId'] === undefined) return false;
     if (!('cantidad' in value) || value['cantidad'] === undefined) return false;
-    if (!('precioUnitario' in value) || value['precioUnitario'] === undefined) return false;
     return true;
 }
 
@@ -61,7 +54,6 @@ export function FacturaItemRequestFromJSONTyped(json: any, ignoreDiscriminator: 
         
         'productoId': json['productoId'],
         'cantidad': json['cantidad'],
-        'precioUnitario': json['precioUnitario'],
     };
 }
 
@@ -73,7 +65,6 @@ export function FacturaItemRequestToJSON(value?: FacturaItemRequest | null): any
         
         'productoId': value['productoId'],
         'cantidad': value['cantidad'],
-        'precioUnitario': value['precioUnitario'],
     };
 }
 

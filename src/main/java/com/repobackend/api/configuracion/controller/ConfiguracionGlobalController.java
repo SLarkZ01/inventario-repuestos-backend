@@ -80,7 +80,8 @@ public class ConfiguracionGlobalController {
         return ResponseEntity.ok(service.obtenerConfiguracion());
     }
 
-    @PutMapping
+    @PostMapping  // Acepta POST para compatibilidad
+    @PutMapping   // También acepta PUT (semánticamente correcto)
     @PreAuthorize("hasRole('ADMIN')")
     @Operation(
         summary = "Actualizar configuración global",
