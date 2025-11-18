@@ -4,7 +4,9 @@ import com.repobackend.api.cliente.dto.ClienteResponse;
 
 import java.util.Date;
 import java.util.List;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(name = "FacturaResponse", description = "Respuesta con los datos de la factura, incluyendo snapshot de cliente embebido")
 public class FacturaResponse {
     private String id;
     private String numeroFactura;
@@ -13,6 +15,7 @@ public class FacturaResponse {
     private Date fechaResolucion;
     private String rangoAutorizado;
 
+    @Schema(description = "Snapshot embebido del cliente presente en la factura")
     private ClienteResponse cliente;
     private String clienteId;
     private List<FacturaItemResponse> items;

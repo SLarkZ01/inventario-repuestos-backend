@@ -44,9 +44,12 @@
       <td width="50%">
         <div class="box">
           <h3>Cliente</h3>
+          <div><strong>ID:</strong> <span th:text="${cliente.id}">690d34252...</span></div>
+          <div><strong>Usuario:</strong> <span th:text="${cliente.username}">jdoe</span></div>
+          <div><strong>Email:</strong> <span th:text="${cliente.email}">jdoe@example.com</span></div>
           <div><strong>Nombre:</strong> <span th:text="${cliente.nombre}">John Doe</span></div>
-          <div><strong>Documento:</strong> <span th:text="${cliente.documento}">123456789</span></div>
-          <div><strong>Dirección:</strong> <span th:text="${cliente.direccion}">Calle Falsa 123</span></div>
+          <div><strong>Apellido:</strong> <span th:text="${cliente.apellido}">Apellidos</span></div>
+          <div><strong>Registrado:</strong> <span th:text="${cliente.fechaCreacion} == null ? '-' : ${#dates.format(cliente.fechaCreacion, 'yyyy-MM-dd HH:mm')}">2024-10-01 12:34</span></div>
         </div>
       </td>
       <td width="50%">

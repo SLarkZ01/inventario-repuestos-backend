@@ -216,9 +216,10 @@ public class FacturaService {
         if (clienteObj instanceof Map) {
             Map<String, Object> m = (Map<String, Object>) clienteObj;
             ClienteEmbebido c = new ClienteEmbebido();
-            c.setNombre((String) m.get("nombre"));
-            c.setDocumento((String) m.getOrDefault("documento", null));
-            c.setDireccion((String) m.getOrDefault("direccion", null));
+            c.setNombre((String) m.getOrDefault("nombre", null));
+            // si el cliente proporciona email/username, mapearlo cuando esté disponible
+            if (m.get("email") != null) c.setEmail((String) m.get("email"));
+            if (m.get("username") != null) c.setUsername((String) m.get("username"));
             f.setCliente(c);
         }
         Object clienteIdObj = body.get("clienteId");
@@ -232,8 +233,8 @@ public class FacturaService {
                 ClienteEmbebido c = new ClienteEmbebido();
                 String fullName = (u.getNombre() == null ? "" : u.getNombre()) + (u.getApellido() == null ? "" : " " + u.getApellido());
                 c.setNombre(fullName.isBlank() ? u.getUsername() : fullName);
-                // no hay campo documento ni direccion en User; dejar documento null y direccion null
-                c.setDocumento(u.getEmail()); // mapear email a documento por conveniencia
+                // mapear email al campo email del cliente embebido
+                c.setEmail(u.getEmail());
                 f.setCliente(c);
             }
         }
@@ -313,8 +314,9 @@ public class FacturaService {
         if (req.getCliente() != null) {
             ClienteEmbebido c = new ClienteEmbebido();
             c.setNombre(req.getCliente().getNombre());
-            c.setDocumento(req.getCliente().getDocumento());
-            c.setDireccion(req.getCliente().getDireccion());
+            // si el request incluye email o username, mapearlos
+            // (nota: ClienteRequest ya no tiene documento/direccion)
+            if (req.getCliente().getEmail() != null) c.setEmail(req.getCliente().getEmail());
             f.setCliente(c);
         }
         if (req.getClienteId() != null) {
@@ -326,7 +328,7 @@ public class FacturaService {
                 ClienteEmbebido c = new ClienteEmbebido();
                 String fullName = (u.getNombre() == null ? "" : u.getNombre()) + (u.getApellido() == null ? "" : " " + u.getApellido());
                 c.setNombre(fullName.isBlank() ? u.getUsername() : fullName);
-                c.setDocumento(u.getEmail());
+                c.setEmail(u.getEmail());
                 f.setCliente(c);
             }
         }
@@ -383,9 +385,12 @@ public class FacturaService {
         r.setNumeroFactura(f.getNumeroFactura());
         if (f.getCliente() != null) {
             ClienteResponse cr = new ClienteResponse();
+            cr.setId(f.getCliente().getId());
+            cr.setUsername(f.getCliente().getUsername());
+            cr.setEmail(f.getCliente().getEmail());
             cr.setNombre(f.getCliente().getNombre());
-            cr.setDocumento(f.getCliente().getDocumento());
-            cr.setDireccion(f.getCliente().getDireccion());
+            cr.setApellido(f.getCliente().getApellido());
+            cr.setFechaCreacion(f.getCliente().getFechaCreacion());
             r.setCliente(cr);
         }
         r.setClienteId(f.getClienteId());

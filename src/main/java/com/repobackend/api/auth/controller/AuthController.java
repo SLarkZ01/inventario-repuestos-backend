@@ -9,10 +9,16 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.repobackend.api.auth.dto.AuthRequests.LoginRequest;
 import com.repobackend.api.auth.dto.AuthRequests.RegisterRequest;
+import com.repobackend.api.auth.dto.ClientSearchResult;
 import com.repobackend.api.auth.service.AuthService;
+import com.repobackend.api.auth.repository.UserRepository;
+import com.repobackend.api.auth.model.User;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 // OpenAPI
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -20,15 +26,20 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.Parameter;
 
 @RestController
 @RequestMapping("/api/auth")
 @Tag(name = "Auth", description = "Autenticación y gestión de tokens")
 public class AuthController {
     private final AuthService authService;
+    private final UserRepository userRepository;
 
-    public AuthController(AuthService authService) {
+    public AuthController(AuthService authService, UserRepository userRepository) {
         this.authService = authService;
+        this.userRepository = userRepository;
     }
 
     @Operation(
@@ -166,5 +177,61 @@ public class AuthController {
     public ResponseEntity<?> me(org.springframework.security.core.Authentication authentication) {
         String userId = authentication == null ? null : authentication.getName();
         return authService.getCurrentUserById(userId);
+    }
+
+    @Operation(
+        summary = "Buscar clientes (autocompletado)",
+        description = "Busca usuarios con rol CLIENT por username, email, nombre o apellido. Útil para autocompletar en formularios de facturación.",
+        parameters = {
+            @Parameter(name = "q", description = "Término de búsqueda (mínimo 2 caracteres)", example = "juan", required = true)
+        },
+        responses = {
+            @ApiResponse(responseCode = "200", description = "Lista de clientes encontrados",
+                content = @Content(mediaType = "application/json",
+                    array = @ArraySchema(schema = @Schema(implementation = ClientSearchResult.class))
+                )
+            ),
+            @ApiResponse(responseCode = "400", description = "Parámetro de búsqueda inválido", content = @Content)
+        }
+    )
+    @GetMapping("/search-clients")
+    public ResponseEntity<?> searchClients(
+        @org.springframework.web.bind.annotation.RequestParam(value = "q", required = false) String query
+    ) {
+        if (query == null || query.trim().length() < 2) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "El término de búsqueda debe tener al menos 2 caracteres"));
+        }
+
+        List<User> users = userRepository.findClientsBySearchTerm(query.trim());
+
+        List<ClientSearchResult> results = users.stream()
+            .limit(20) // Limitar resultados a 20 para autocompletado
+            .map(user -> {
+                String nombreCompleto = buildNombreCompleto(user);
+                return new ClientSearchResult(
+                    user.getId(),
+                    user.getUsername(),
+                    user.getEmail(),
+                    nombreCompleto
+                );
+            })
+            .collect(Collectors.toList());
+
+        return ResponseEntity.ok(java.util.Map.of("clients", results));
+    }
+
+    private String buildNombreCompleto(User user) {
+        StringBuilder sb = new StringBuilder();
+        if (user.getNombre() != null && !user.getNombre().isBlank()) {
+            sb.append(user.getNombre());
+        }
+        if (user.getApellido() != null && !user.getApellido().isBlank()) {
+            if (sb.length() > 0) sb.append(" ");
+            sb.append(user.getApellido());
+        }
+        if (sb.length() == 0) {
+            return user.getUsername();
+        }
+        return sb.toString();
     }
 }

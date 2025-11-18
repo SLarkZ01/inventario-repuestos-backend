@@ -274,9 +274,12 @@ public class FacturaServiceV2 {
         // Cliente
         if (req.getCliente() != null) {
             ClienteEmbebido c = new ClienteEmbebido();
+            c.setId(req.getCliente().getId());
+            c.setUsername(req.getCliente().getUsername());
+            c.setEmail(req.getCliente().getEmail());
             c.setNombre(req.getCliente().getNombre());
-            c.setDocumento(req.getCliente().getDocumento());
-            c.setDireccion(req.getCliente().getDireccion());
+            c.setApellido(req.getCliente().getApellido());
+            c.setFechaCreacion(req.getCliente().getFechaCreacion());
             factura.setCliente(c);
         } else if (req.getClienteId() != null) {
             factura.setClienteId(req.getClienteId());
@@ -399,10 +402,18 @@ public class FacturaServiceV2 {
 
     private ClienteEmbebido construirClienteDesdeUser(User user) {
         ClienteEmbebido c = new ClienteEmbebido();
-        String nombre = (user.getNombre() != null ? user.getNombre() : "") +
-                       (user.getApellido() != null ? " " + user.getApellido() : "");
-        c.setNombre(nombre.trim().isEmpty() ? user.getUsername() : nombre.trim());
-        c.setDocumento(user.getEmail()); // temporal, debería tener campo documento
+        c.setId(user.getId());
+        c.setUsername(user.getUsername());
+        c.setEmail(user.getEmail());
+        String nombre = (user.getNombre() != null ? user.getNombre() : "");
+        String apellido = (user.getApellido() != null ? user.getApellido() : "");
+        if ((nombre + " " + apellido).trim().isEmpty()) {
+            c.setNombre(user.getUsername());
+        } else {
+            c.setNombre((nombre + " " + apellido).trim());
+        }
+        c.setApellido(user.getApellido());
+        c.setFechaCreacion(user.getFechaCreacion());
         return c;
     }
 
@@ -418,9 +429,12 @@ public class FacturaServiceV2 {
 
         if (f.getCliente() != null) {
             com.repobackend.api.cliente.dto.ClienteResponse cr = new com.repobackend.api.cliente.dto.ClienteResponse();
+            cr.setId(f.getCliente().getId());
+            cr.setUsername(f.getCliente().getUsername());
+            cr.setEmail(f.getCliente().getEmail());
             cr.setNombre(f.getCliente().getNombre());
-            cr.setDocumento(f.getCliente().getDocumento());
-            cr.setDireccion(f.getCliente().getDireccion());
+            cr.setApellido(f.getCliente().getApellido());
+            cr.setFechaCreacion(f.getCliente().getFechaCreacion());
             r.setCliente(cr);
         }
 
@@ -461,4 +475,3 @@ public class FacturaServiceV2 {
         return r;
     }
 }
-

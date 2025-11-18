@@ -32,11 +32,7 @@ public class FacturaPdfService {
                 Map.entry("numero", f.getNumeroFactura() == null ? f.getId() : f.getNumeroFactura()),
                 Map.entry("fecha", f.getCreadoEn()),
                 Map.entry("estado", f.getEstado() == null ? "EMITIDA" : String.valueOf(f.getEstado())),
-                Map.entry("cliente", Map.of(
-                    "nombre", safe(f.getCliente() == null ? null : f.getCliente().getNombre()),
-                    "documento", safe(f.getCliente() == null ? null : f.getCliente().getDocumento()),
-                    "direccion", safe(f.getCliente() == null ? null : f.getCliente().getDireccion())
-                )),
+                Map.entry("cliente", mapCliente(f)),
                 Map.entry("subtotal", fmt(f.getSubtotal())),
                 Map.entry("descuentos", fmt(f.getTotalDescuentos())),
                 Map.entry("base", fmt(f.getBaseImponible())),
@@ -90,6 +86,29 @@ public class FacturaPdfService {
             }
         }
         return list;
+    }
+
+    private Map<String, Object> mapCliente(Factura f) {
+        if (f.getCliente() == null) {
+            // Cliente vacío con valores por defecto
+            return Map.of(
+                "id", "",
+                "username", "",
+                "email", "",
+                "nombre", "Cliente General",
+                "apellido", "",
+                "fechaCreacion", null
+            );
+        }
+        var c = f.getCliente();
+        return Map.of(
+            "id", safe(c.getId()),
+            "username", safe(c.getUsername()),
+            "email", safe(c.getEmail()),
+            "nombre", safe(c.getNombre()),
+            "apellido", safe(c.getApellido()),
+            "fechaCreacion", c.getFechaCreacion()
+        );
     }
 
     private boolean isPdf(byte[] bytes) {
